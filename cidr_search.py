@@ -19,7 +19,11 @@ def search(ipaddr):
 
         cursor.execute(stmt,tuple([param,'%']))
         row = cursor.fetchone()
-        print(format("%s, %s" % row))
+        if row:
+            print(format("%s, %s" % row))
+        else:
+            print("Not Found")
+
     except Exception as e:
         print(e)
 
