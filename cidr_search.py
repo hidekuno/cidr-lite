@@ -4,28 +4,24 @@ import sys
 import sqlite3
 import ipaddress
 
-def is_ipaddr(addr):
+def eval_ipaddr(ipaddr):
     try:
-        ipaddress.IPv4Network(addr)
-        return True
+        ip = ipaddress.IPv4Network(ipaddr)
+        if ip.is_private == True:
+            return "Private IP address"
+
     except ValueError:
-        return False
+        return "Not IP address"
 
+    param = "".join([format(int(x),'08b') for x in ipaddr.split('.')])
+    stmt="select country, cidr from ipaddr_v4 where addr like substr(?,1,subnetmask) || ?"
 
-def search(ipaddr):
-    try:
-        param = "".join([format(int(x),'08b') for x in ipaddr.split('.')])
-        stmt="select country, cidr from ipaddr_v4 where addr like substr(?,1,subnetmask) || ?"
-
-        cursor.execute(stmt,tuple([param,'%']))
-        row = cursor.fetchone()
-        if row:
-            print(format("%s, %s" % row))
-        else:
-            print("Not Found")
-
-    except Exception as e:
-        print(e)
+    cursor.execute(stmt,tuple([param,'%']))
+    row = cursor.fetchone()
+    if row:
+        return format("%s, %s" % row)
+    else:
+        return "Not Found"
 
 def repl():
     print("######## Please Input IP Adress #######\n")
@@ -37,11 +33,11 @@ def repl():
         if ipaddr == "quit":
             break
 
-        if is_ipaddr(ipaddr) == False:
-            print("Not Ipaddress")
-            continue
-
-        search(ipaddr)
+        try:
+            result = eval_ipaddr(ipaddr)
+            print(result)
+        except Exception as e:
+            print(e)
 
 if __name__ == "__main__":
     dbpath = os.path.join(os.environ.get("HOME"), "database.cidr")
