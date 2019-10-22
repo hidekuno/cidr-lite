@@ -34,7 +34,7 @@ def repl():
             break
 
         try:
-            result = eval_ipaddr(ipaddr)
+            result = eval_ipaddr(ipaddr.strip())
             print(result)
         except Exception as e:
             print(e)
