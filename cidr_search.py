@@ -14,9 +14,14 @@ def eval_ipaddr(ipaddr):
         return "Not IP address"
 
     param = "".join([format(int(x),'08b') for x in ipaddr.split('.')])
-    stmt="select country, cidr from ipaddr_v4 where addr like substr(?,1,subnetmask) || ?"
 
-    cursor.execute(stmt,tuple([param,'%']))
+    stmt = """
+    select country, cidr
+    from (select addr, country, cidr, subnetmask from ipaddr_v4 where addr like ?)
+    where addr like substr(?,1,subnetmask) || ?
+    """
+
+    cursor.execute(stmt,tuple([param[:8]+'%', param,'%']))
     row = cursor.fetchone()
     if row:
         return format("%s, %s" % row)
