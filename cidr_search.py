@@ -4,7 +4,9 @@ import sys
 import sqlite3
 import ipaddress
 
-def eval_ipaddr(ipaddr):
+def eval_ipaddr(ipaddr,cursor):
+    ipaddr = ipaddr.strip()
+
     try:
         ip = ipaddress.IPv4Network(ipaddr)
         if ip.is_private == True:
@@ -28,7 +30,7 @@ def eval_ipaddr(ipaddr):
     else:
         return "Not Found"
 
-def repl():
+def repl(cursor):
     print("######## Please Input IP Adress #######\n")
 
     while True:
@@ -39,7 +41,7 @@ def repl():
             break
 
         try:
-            result = eval_ipaddr(ipaddr.strip())
+            result = eval_ipaddr(ipaddr,cursor)
             print(result)
         except Exception as e:
             print(e)
@@ -50,7 +52,7 @@ if __name__ == "__main__":
         conn = sqlite3.connect(dbpath)
         cursor = conn.cursor()
         cursor.execute("PRAGMA case_sensitive_like=ON;")
-        repl()
+        repl(cursor)
         conn.close()
 
     except Exception as e:
