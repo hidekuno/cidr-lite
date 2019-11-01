@@ -4,15 +4,16 @@
 #
 # hidekuno@gmail.com
 #
+# Test howto
+# 1) python tests/cidr_search_test.py
+# 2) cd tests; python -m unittest cidr_search_test
+# 3) PYTHONPATH=$HOME/jvn python tests/cidr_search_test.py
+#
 import unittest
 import os
 import sqlite3
 from pathlib import Path
 import sys
-
-# Test howto
-# 1) python tests/cidr_search_test.py
-# 2) cd tests; python -m unittest cidr_search_test
 sys.path.append(str(Path(__file__).parent.parent))
 from cidr_search import eval_ipaddr
 
@@ -47,6 +48,7 @@ class TestMethods(unittest.TestCase):
         self.assertEqual(r, 'Not IP address')
 
     def test_ipaddr_notfound(self):
+        # class D
         r = eval_ipaddr('224.1.1.255',self.cursor)
         self.assertEqual(r, 'Not Found')
 
