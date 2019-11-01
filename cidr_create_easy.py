@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-# coding: utf-8
+#
+# IP Address Search Tool
+#
+# hidekuno@gmail.com
+#
 import sys
 import gzip
 import urllib.request
