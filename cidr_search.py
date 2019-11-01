@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+#
+# IP Address Search Tool
+#
+# hidekuno@gmail.com
+#
 import os
 import sys
 import sqlite3
