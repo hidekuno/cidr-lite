@@ -9,19 +9,26 @@ import codecs
 import sys
 import zipfile
 import urllib.request
+import argparse
+import traceback
 
 WORK_DIR = os.path.join(os.sep,'tmp')
 ZIP_FILENAME = os.path.join(WORK_DIR, 'GeoLite2-Country-CSV.zip')
-CSV_URL = 'https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country-CSV.zip'
+
+CSV_URL = 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=%s&suffix=zip'
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-t', '--token', type=str, dest="token", required=True)
+args = parser.parse_args(sys.argv[1:])
 
 try:
     fd = open(ZIP_FILENAME, 'wb')
-    url = urllib.request.urlopen(CSV_URL)
+    url = urllib.request.urlopen(format(CSV_URL % (args.token)))
     fd.write(url.read())
     fd.close()
     url.close()
 except:
-    traceback.print_exc()    
+    traceback.print_exc()
     sys.exit(1)
 
 coutries = {}
