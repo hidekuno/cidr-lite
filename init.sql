@@ -5,6 +5,6 @@ CREATE TABLE ipaddr_v4 (
   country    char(2)
 );
 .separator \t
-.import '/root/cidr.txt' ipaddr_v4
+.import '/tmp/cidr.txt' ipaddr_v4
 
 CREATE INDEX ipaddr_v4_idx1 ON ipaddr_v4(addr);
