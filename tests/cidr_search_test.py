@@ -33,24 +33,30 @@ class TestMethods(unittest.TestCase):
     # from here testcode
     def test_ipaddr(self):
         r = eval_ipaddr('210.239.78.91',self.cursor)
-        self.assertEqual(r, 'JP, 210.236.0.0/14')
+        self.assertEqual(r, 'JP, 210.224.0.0/12')
 
     def test_ipaddr_strip(self):
         r = eval_ipaddr('  210.239.78.91   ',self.cursor)
-        self.assertEqual(r, 'JP, 210.236.0.0/14')
+        self.assertEqual(r, 'JP, 210.224.0.0/12')
 
     def test_ipaddr_private(self):
-        r = eval_ipaddr('192.168.1.1',self.cursor)
-        self.assertEqual(r, 'Private IP address')
+        try:
+            r = eval_ipaddr('192.168.1.1',self.cursor)
+        except Exception as e:
+            self.assertEqual(str(e), 'Private IP address')
 
     def test_ipaddr_noip(self):
-        r = eval_ipaddr('999.999.999.999',self.cursor)
-        self.assertEqual(r, 'Not IP address')
+        try:
+            r = eval_ipaddr('999.999.999.999',self.cursor)
+        except Exception as e:
+            self.assertEqual(str(e), 'Not IP address')
 
     def test_ipaddr_notfound(self):
         # class D
-        r = eval_ipaddr('224.1.1.255',self.cursor)
-        self.assertEqual(r, 'Not Found')
+        try:
+            r = eval_ipaddr('224.1.1.255',self.cursor)
+        except Exception as e:
+            self.assertEqual(str(e), 'Not Found')
 
 if __name__ == '__main__':
     try:
