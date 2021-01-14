@@ -8,6 +8,7 @@ import os
 import sys
 import sqlite3
 import ipaddress
+import argparse
 
 def eval_ipaddr(ipaddr,cursor):
     ipaddr = ipaddr.strip()
@@ -52,12 +53,22 @@ def repl(cursor):
             print(e)
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--ip', type=str, dest="ipaddr", required=False)
+    args = parser.parse_args(sys.argv[1:])
+
     dbpath = os.path.join(os.environ.get("HOME"), "database.cidr")
     try:
         conn = sqlite3.connect(dbpath)
         cursor = conn.cursor()
         cursor.execute("PRAGMA case_sensitive_like=ON;")
-        repl(cursor)
+
+        if args.ipaddr:
+            result = eval_ipaddr(args.ipaddr,cursor)
+            print(result)
+        else:
+            repl(cursor)
         conn.close()
 
     except Exception as e:
