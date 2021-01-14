@@ -16,10 +16,11 @@ def eval_ipaddr(ipaddr,cursor):
     try:
         ip = ipaddress.IPv4Network(ipaddr)
         if ip.is_private == True:
-            return "Private IP address"
+            raise Exception("Private IP address")
 
     except ValueError:
-        return "Not IP address"
+        raise Exception("Not IP address")
+
 
     param = "".join([format(int(x),'08b') for x in ipaddr.split('.')])
 
@@ -34,7 +35,7 @@ def eval_ipaddr(ipaddr,cursor):
     if row:
         return format("%s, %s" % row)
     else:
-        return "Not Found"
+        raise Exception("Not Found")
 
 def repl(cursor):
     print("######## Please Input IP Adress #######\n")
@@ -65,8 +66,11 @@ if __name__ == "__main__":
         cursor.execute("PRAGMA case_sensitive_like=ON;")
 
         if args.ipaddr:
-            result = eval_ipaddr(args.ipaddr,cursor)
-            print(result)
+            try:
+                result = eval_ipaddr(args.ipaddr,cursor)
+                print(result)
+            except Exception as e:
+                print(str(e))
         else:
             repl(cursor)
         conn.close()
