@@ -9,6 +9,8 @@ IPアドレス検索ツール
 - dockerが動いていること
 
 ```
+cd ${HOME}
+git clone https://github.com/hidekuno/cidr-lite
 docker build -t ${yourid}/cidr-lite --file=Dockerfile --build-arg token=${YOUR_TOKEN_ID} .
 docker run -it --name cidr-lite ${yourid}/cidr-lite python3 /root/cidr_search.py
 ```
