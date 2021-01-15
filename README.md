@@ -9,7 +9,7 @@ IPアドレス検索ツール
 - dockerが動いていること
 
 ```
-docker pull hidekuno/cidr-lite
-docker run -it --name cidr-lite hidekuno/cidr-lite python3 /root/cidr_search.py
+docker build -t ${yourid}/cidr-lite --file=Dockerfile --build-arg token=${YOUR_TOKEN_ID} .
+docker run -it --name cidr-lite ${yourid}/cidr-lite python3 /root/cidr_search.py
 ```
 ![image](https://user-images.githubusercontent.com/22115777/67066250-a798f900-f1ac-11e9-9765-861678a7d32b.png)
