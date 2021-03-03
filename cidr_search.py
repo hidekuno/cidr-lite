@@ -9,6 +9,7 @@ import sys
 import sqlite3
 import ipaddress
 import argparse
+import traceback
 
 def eval_ipaddr(ipaddr,cursor):
     ipaddr = ipaddr.strip()
@@ -41,7 +42,12 @@ def repl(cursor):
     print("######## Please Input IP Adress #######\n")
 
     while True:
-        ipaddr = input("<cidr-lite> ")
+        try:
+            ipaddr = input("<cidr-lite> ")
+        except KeyboardInterrupt:
+            print("")
+            continue
+
         if ipaddr == "":
             continue
         if ipaddr == "quit":
@@ -75,6 +81,8 @@ if __name__ == "__main__":
             repl(cursor)
         conn.close()
 
+    except EOFError:
+        sys.exit(0)
     except Exception as e:
         traceback.print_exc()
         sys.exit(1)
