@@ -33,11 +33,7 @@ class TestMethods(unittest.TestCase):
     # from here testcode
     def test_ipaddr(self):
         r = eval_ipaddr('210.239.78.91',self.cursor)
-        self.assertEqual(r, 'JP, 210.224.0.0/12')
-
-    def test_ipaddr_strip(self):
-        r = eval_ipaddr('  210.239.78.91   ',self.cursor)
-        self.assertEqual(r, 'JP, 210.224.0.0/12')
+        self.assertEqual(r, 'JP,210.224.0.0/12')
 
     def test_ipaddr_private(self):
         try:
@@ -48,6 +44,12 @@ class TestMethods(unittest.TestCase):
     def test_ipaddr_noip(self):
         try:
             r = eval_ipaddr('999.999.999.999',self.cursor)
+        except Exception as e:
+            self.assertEqual(str(e), 'Not IP address')
+
+    def test_ipaddr_alphabet(self):
+        try:
+            r = eval_ipaddr('aaa.bbb.ccc.ddd',self.cursor)
         except Exception as e:
             self.assertEqual(str(e), 'Not IP address')
 
