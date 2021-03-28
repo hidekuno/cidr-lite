@@ -2,7 +2,7 @@ IP address search tool
 =================
 
 ## Overview
-- Search the CIDR format network address and country code from the IP address.
+- Search the CIDR format network address and country code from the IPv4 address.
 
 ## Build
 ### Requirement
@@ -27,6 +27,9 @@ python3 tests/cidr_search_test.py
 ```
 python3 cidr_search.py
 ```
+- input ip address 
+
+![image](https://user-images.githubusercontent.com/22115777/112744686-48642880-8fdd-11eb-86c8-357de803f819.png)
 
 ## Run on docker
 ### Requirement
