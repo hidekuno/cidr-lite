@@ -1,14 +1,38 @@
-IPアドレス検索ツール
+IP address search tool
 =================
 
-## 概要
-- IPアドレスよりCIDR形式のネットワークアドレス、国名コードを求める。
+## Overview
+- Search the CIDR format network address and country code from the IP address.
 
-## 動かし方
-### 動作条件
-- dockerが動いていること
+## Build
+### Requirement
+- account of maxmind.com(https://www.maxmind.com/en/account/login)
+- python3 installed.
+- sqlite3 installed.
 
-### 実行手順 
+```
+cd ${HOME}
+git clone https://github.com/hidekuno/cidr-lite
+cd cidr-lite
+python3 cidr_create_geoip.py --token ${your_token} >/tmp/cidr.txt
+sqlite3 database.cidr '.read init.sql'
+```
+
+## Test
+```
+python3 tests/cidr_search_test.py
+```
+
+## Run
+```
+python3 cidr_search.py
+```
+
+## Run on docker
+### Requirement
+- account of maxmind.com(https://www.maxmind.com/en/account/login)
+- docker is running.
+
 ```
 cd ${HOME}
 git clone https://github.com/hidekuno/cidr-lite
