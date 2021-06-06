@@ -5,6 +5,7 @@
 # hidekuno@gmail.com
 #
 import sys
+import traceback
 import ipaddress
 import urllib.request
 
@@ -42,4 +43,5 @@ if __name__ == "__main__":
             make_data(r)
             sys.stderr.write("done. \n")
     except Exception as e:
-        traceback.print_exc()
+        print(e, traceback.format_exc(), file=sys.stderr)
+        sys.exit(1)

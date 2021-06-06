@@ -82,7 +82,7 @@ if __name__ == "__main__":
         cursor.execute("PRAGMA case_sensitive_like=ON;")
 
         if args.ipaddr:
-            do_eval_ipaddr(ipaddr,cursor)
+            do_eval_ipaddr(args.ipaddr,cursor)
         else:
             repl(cursor)
         conn.close()
@@ -90,5 +90,5 @@ if __name__ == "__main__":
     except EOFError:
         sys.exit(0)
     except Exception as e:
-        traceback.print_exc()
+        print(e, traceback.format_exc(), file=sys.stderr)
         sys.exit(1)

@@ -10,6 +10,7 @@
 # 3) PYTHONPATH=$HOME/jvn python tests/cidr_search_test.py
 #
 import unittest
+import traceback
 import os
 import sqlite3
 from pathlib import Path
@@ -37,26 +38,26 @@ class TestMethods(unittest.TestCase):
 
     def test_ipaddr_private(self):
         try:
-            r = eval_ipaddr('192.168.1.1',self.cursor)
+            eval_ipaddr('192.168.1.1',self.cursor)
         except Exception as e:
             self.assertEqual(str(e), 'Private IP address')
 
     def test_ipaddr_noip(self):
         try:
-            r = eval_ipaddr('999.999.999.999',self.cursor)
+            eval_ipaddr('999.999.999.999',self.cursor)
         except Exception as e:
             self.assertEqual(str(e), 'Not IP address')
 
     def test_ipaddr_alphabet(self):
         try:
-            r = eval_ipaddr('aaa.bbb.ccc.ddd',self.cursor)
+            eval_ipaddr('aaa.bbb.ccc.ddd',self.cursor)
         except Exception as e:
             self.assertEqual(str(e), 'Not IP address')
 
     def test_ipaddr_notfound(self):
         # class D
         try:
-            r = eval_ipaddr('224.1.1.255',self.cursor)
+            eval_ipaddr('224.1.1.255',self.cursor)
         except Exception as e:
             self.assertEqual(str(e), 'Not Found')
 
@@ -65,5 +66,5 @@ if __name__ == '__main__':
         unittest.main()
 
     except Exception as e:
-        traceback.print_exc()
+        print(e, traceback.format_exc(), file=sys.stderr)
         sys.exit(1)

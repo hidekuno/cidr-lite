@@ -5,6 +5,7 @@
 # hidekuno@gmail.com
 #
 import sys
+import traceback
 import gzip
 import urllib.request
 from io import StringIO
@@ -33,4 +34,5 @@ if __name__ == "__main__":
             print(addr + "\t" + mask + "\t" + subnet + "\t" + country)
 
     except Exception as e:
-        traceback.print_exc()
+        print(e, traceback.format_exc(), file=sys.stderr)
+        sys.exit(1)
