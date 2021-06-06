@@ -10,6 +10,7 @@ import sqlite3
 import ipaddress
 import argparse
 import traceback
+import cidr_ipattr
 
 class EvalIpException(Exception):
     def __init__(self, message):
@@ -20,22 +21,23 @@ class EvalIpException(Exception):
 
 def eval_ipaddr(ipaddr,cursor):
     try:
-        ip = ipaddress.IPv4Network(ipaddr)
+        ip = ipaddress.ip_address(ipaddr)
         if ip.is_private == True:
             raise EvalIpException("Private IP address")
 
     except ValueError:
         raise EvalIpException("Not IP address")
 
-    param = "".join([format(int(x),'08b') for x in ipaddr.split('.')])
+    attr = cidr_ipattr.IpAttribute(ip.version)
 
     stmt = """
     select country, cidr
-    from (select addr, country, cidr, subnetmask from ipaddr_v4 where addr like ?)
-    where addr like substr(?,1,subnetmask) || ?
-    """
+    from (select addr, country, cidr, prefixlen from ipaddr_v%d where addr like ?)
+    where addr like substr(?,1,prefixlen) || ?
+    """ % ip.version
 
-    cursor.execute(stmt,tuple([param[:8]+'%', param,'%']))
+    param = attr.bin_addr(ip)
+    cursor.execute(stmt,tuple([param[:attr.matches]+'%', param,'%']))
     row = cursor.fetchone()
     if row:
         return format("%s,%s" % row)
