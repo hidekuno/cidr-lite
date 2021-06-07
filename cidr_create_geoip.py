@@ -33,7 +33,7 @@ def download_zipfile(args):
         sys.exit(1)
 
 def extract_zipfile():
-    coutries = {}
+    countries = {}
     ipvfile = None
     ipv6file = None
     with zipfile.ZipFile(ZIP_FILENAME,'r') as z:
@@ -44,7 +44,7 @@ def extract_zipfile():
                 with codecs.open(os.path.join(WORK_DIR, csv),'r','utf-8') as fd:
                     for line in fd:
                         rec = line.rstrip().split(",")
-                        coutries[rec[0]] = rec[4]
+                        countries[rec[0]] = rec[4]
             if base == GEOIP_IP_FILE:
                 z.extract(csv, path=WORK_DIR)
                 ipvfile = os.path.join(WORK_DIR, csv)
@@ -56,9 +56,9 @@ def extract_zipfile():
     if not ipvfile or not ipv6file:
         sys.exit(1)
 
-    return (coutries,ipvfile,ipv6file)
+    return (countries,ipvfile,ipv6file)
 
-def make_cidr_file(version,coutries,ipvfile):
+def make_cidr_file(version,countries,ipvfile):
 
     attr = cidr_ipattr.IpAttribute(version)
     wfd = codecs.open(os.path.join(os.sep,'tmp',attr.csvfile),'w','utf-8')
@@ -76,7 +76,7 @@ def make_cidr_file(version,coutries,ipvfile):
             c = rec[2] if rec[2] else rec[1]
             if not c:
                 continue
-            print(format("%s\t%s\t%s\t%s" % (attr.bin_addr(naddr), prefix, rec[0], coutries[c])), file=wfd)
+            print(format("%s\t%s\t%s\t%s" % (attr.bin_addr(naddr), prefix, rec[0], countries[c])), file=wfd)
 
     wfd.close()
 
@@ -86,6 +86,6 @@ if __name__ == "__main__":
     args = parser.parse_args(sys.argv[1:])
     download_zipfile(args)
 
-    (coutries,ipvfile,ipv6file) = extract_zipfile()
-    make_cidr_file(4,coutries,ipvfile)
-    make_cidr_file(6,coutries,ipv6file)
+    (countries,ipvfile,ipv6file) = extract_zipfile()
+    make_cidr_file(4,countries,ipvfile)
+    make_cidr_file(6,countries,ipv6file)
