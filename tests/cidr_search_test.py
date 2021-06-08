@@ -33,8 +33,8 @@ class TestMethods(unittest.TestCase):
 
     # from here testcode
     def test_ipaddr(self):
-        r = eval_ipaddr('210.239.78.91',self.cursor)
-        self.assertEqual(r, 'JP,210.224.0.0/12')
+        r = eval_ipaddr('202.232.2.180',self.cursor)
+        self.assertEqual(r, 'JP,202.224.0.0/11')
 
     def test_ipaddr_private(self):
         try:
@@ -54,12 +54,35 @@ class TestMethods(unittest.TestCase):
         except Exception as e:
             self.assertEqual(str(e), 'Not IP address')
 
-    def test_ipaddr_notfound(self):
+    def test_ipaddr_multicast(self):
         # class D
         try:
             eval_ipaddr('224.1.1.255',self.cursor)
         except Exception as e:
-            self.assertEqual(str(e), 'Not Found')
+            self.assertEqual(str(e), 'Multicast IP address')
+
+    def test_ipv6addr(self):
+        r = eval_ipaddr('2001:240:bb81::10:180',self.cursor)
+        self.assertEqual(r, 'JP,2001:240::/32')
+
+    def test_ipv6addr_linklocal(self):
+        try:
+            eval_ipaddr('fe80::215:5dff:fe5d:66e9',self.cursor)
+        except Exception as e:
+            self.assertEqual(str(e), 'Private IP address')
+
+    def test_ipv6addr_uniqlocal(self):
+        try:
+            eval_ipaddr('fc00::215:5dff:fe5d:66e9',self.cursor)
+        except Exception as e:
+            self.assertEqual(str(e), 'Private IP address')
+
+    def test_ipv6addr_multicast(self):
+        # class D
+        try:
+            eval_ipaddr('FF02::1',self.cursor)
+        except Exception as e:
+            self.assertEqual(str(e), 'Multicast IP address')
 
 if __name__ == '__main__':
     try:

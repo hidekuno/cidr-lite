@@ -24,6 +24,8 @@ def eval_ipaddr(ipaddr,cursor):
         ip = ipaddress.ip_address(ipaddr)
         if ip.is_private == True:
             raise EvalIpException("Private IP address")
+        if ip.is_multicast == True:
+            raise EvalIpException("Multicast IP address")
 
     except ValueError:
         raise EvalIpException("Not IP address")
