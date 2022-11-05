@@ -32,17 +32,28 @@ def eval_ipaddr(ipaddr,cursor):
 
     attr = cidr_ipattr.IpAttribute(ip.version)
 
-    stmt = """
-    select country, cidr
-    from (select addr, country, cidr, prefixlen from ipaddr_v%d where addr like ?)
-    where addr like substr(?,1,prefixlen) || ?
-    """ % ip.version
+    def get_ip_record(stmt):
+        param = attr.bin_addr(ip)
+        cursor.execute(stmt % ip.version,tuple([param[:attr.matches]+'%', param,'%']))
+        row = cursor.fetchone()
+        return row
 
-    param = attr.bin_addr(ip)
-    cursor.execute(stmt,tuple([param[:attr.matches]+'%', param,'%']))
-    row = cursor.fetchone()
-    if row:
-        return format("%s,%s" % row)
+    country = get_ip_record(
+        """
+        select country, cidr
+        from (select addr, country, cidr, prefixlen from ipaddr_v%d where addr like ?)
+        where addr like substr(?,1,prefixlen) || ?
+        """)
+
+    provider = get_ip_record(
+        """
+        select provider,asn
+        from (select addr, provider, asn, prefixlen from asn_v%d where addr like ?)
+        where addr like substr(?,1,prefixlen) || ?
+        """)
+
+    if country:
+        return format("%s,%s,%s,AS%s" % (country + provider))
     else:
         raise EvalIpException("Not Found")
 
