@@ -13,18 +13,25 @@ import argparse
 import traceback
 import ipaddress
 import cidr_ipattr
+import csv
 
 WORK_DIR = os.path.join(os.sep,'tmp')
-ZIP_FILENAME = os.path.join(WORK_DIR, 'GeoLite2-Country-CSV.zip')
-CSV_URL = 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=%s&suffix=zip'
+CSV_URL = 'https://download.maxmind.com/app/geoip_download?edition_id=%s&license_key=%s&suffix=zip'
+COUNTRY_CSV = 'GeoLite2-Country-CSV'
+ASN_CSV = 'GeoLite2-ASN-CSV'
+
 GEOIP_COUNTRY_FILE = 'GeoLite2-Country-Locations-ja.csv'
 GEOIP_IP_FILE = 'GeoLite2-Country-Blocks-IPv4.csv'
 GEOIP_IPV6_FILE = 'GeoLite2-Country-Blocks-IPv6.csv'
 
-def download_zipfile(args):
+GEOIP_ASN_FILE = 'GeoLite2-ASN-Blocks-IPv4.csv'
+GEOIP_ASN_IPV6_FILE = 'GeoLite2-ASN-Blocks-IPv6.csv'
+
+def download_zipfile(geofile,args):
     try:
-        fd = open(ZIP_FILENAME, 'wb')
-        url = urllib.request.urlopen(format(CSV_URL % (args.token)))
+        zip_filename = os.path.join(WORK_DIR, geofile + '.zip')
+        fd = open(zip_filename, 'wb')
+        url = urllib.request.urlopen(format(CSV_URL % (geofile, args.token)))
         fd.write(url.read())
         fd.close()
         url.close()
@@ -32,11 +39,13 @@ def download_zipfile(args):
         traceback.print_exc()
         sys.exit(1)
 
-def extract_zipfile():
+def extract_zipfile(geofile):
     countries = {}
     ipvfile = None
     ipv6file = None
-    with zipfile.ZipFile(ZIP_FILENAME,'r') as z:
+    zip_filename = os.path.join(WORK_DIR, geofile + '.zip')
+
+    with zipfile.ZipFile(zip_filename,'r') as z:
         for csv in z.namelist():
             base = csv.split('/')[1]
             if base == GEOIP_COUNTRY_FILE:
@@ -45,11 +54,11 @@ def extract_zipfile():
                     for line in fd:
                         rec = line.rstrip().split(",")
                         countries[rec[0]] = rec[4]
-            if base == GEOIP_IP_FILE:
+            if base in [GEOIP_IP_FILE, GEOIP_ASN_FILE]:
                 z.extract(csv, path=WORK_DIR)
                 ipvfile = os.path.join(WORK_DIR, csv)
 
-            if base == GEOIP_IPV6_FILE:
+            if base in [GEOIP_IPV6_FILE, GEOIP_ASN_IPV6_FILE]:
                 z.extract(csv, path=WORK_DIR)
                 ipv6file = os.path.join(WORK_DIR, csv)
 
@@ -80,12 +89,35 @@ def make_cidr_file(version,countries,ipvfile):
 
     wfd.close()
 
+def make_asn_file(version,ipvfile):
+    attr = cidr_ipattr.IpAttribute(version)
+    wfd = codecs.open(os.path.join(os.sep,'tmp', attr.asn_csvfile),'w','utf-8')
+
+    with codecs.open(ipvfile,'r','utf-8') as fd:
+        next(csv.reader(fd))
+        for r in csv.reader(fd):
+            cidr = ipaddress.ip_network(r[0])
+            naddr = cidr.network_address
+            prefix = cidr.prefixlen
+
+            print("\t".join([attr.bin_addr(naddr), str(prefix)] + r), file=wfd)
+    wfd.close()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--token', type=str, dest="token", required=True)
+    parser.add_argument('-a','--asn', default=False, action='store_true', required=False)
+    parser.add_argument('-c','--country', default=False, action='store_true', required=False)
     args = parser.parse_args(sys.argv[1:])
-    download_zipfile(args)
 
-    (countries,ipvfile,ipv6file) = extract_zipfile()
-    make_cidr_file(4,countries,ipvfile)
-    make_cidr_file(6,countries,ipv6file)
+    both = not args.country and not args.asn
+    if args.country or both:
+        download_zipfile(COUNTRY_CSV, args)
+        (countries,ipvfile,ipv6file) = extract_zipfile(COUNTRY_CSV)
+        make_cidr_file(4,countries,ipvfile)
+        make_cidr_file(6,countries,ipv6file)
+    if args.asn or both:
+        download_zipfile(ASN_CSV, args)
+        (countries,ipvfile,ipv6file) = extract_zipfile(ASN_CSV)
+        make_asn_file(4,ipvfile)
+        make_asn_file(6,ipv6file)

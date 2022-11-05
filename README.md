@@ -29,7 +29,7 @@ python3 cidr_search.py
 ```
 - type IP address
 
-![image](https://user-images.githubusercontent.com/22115777/112744686-48642880-8fdd-11eb-86c8-357de803f819.png)
+![image](https://user-images.githubusercontent.com/22115777/200112280-da0396b6-d4ce-409e-af2d-d014faf19ab2.png)
 
 ## Run on docker
 ### Requirement
@@ -43,4 +43,3 @@ cd cidr-lite/docker
 docker build -t ${yourid}/cidr-lite --file=Dockerfile --build-arg token=${YOUR_TOKEN_ID} .
 docker run -it --name cidr-lite ${yourid}/cidr-lite python3 /root/cidr_search.py
 ```
-![image](https://user-images.githubusercontent.com/22115777/67066250-a798f900-f1ac-11e9-9765-861678a7d32b.png)

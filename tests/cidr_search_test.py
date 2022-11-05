@@ -34,7 +34,7 @@ class TestMethods(unittest.TestCase):
     # from here testcode
     def test_ipaddr(self):
         r = eval_ipaddr('202.232.2.180',self.cursor)
-        self.assertEqual(r, 'JP,202.224.0.0/11')
+        self.assertEqual(r, 'JP,202.224.0.0/11,Internet Initiative Japan Inc.,AS2497')
 
     def test_ipaddr_private(self):
         try:
@@ -63,7 +63,7 @@ class TestMethods(unittest.TestCase):
 
     def test_ipv6addr(self):
         r = eval_ipaddr('2001:240:bb81::10:180',self.cursor)
-        self.assertEqual(r, 'JP,2001:240::/32')
+        self.assertEqual(r, 'JP,2001:240::/32,Internet Initiative Japan Inc.,AS2497')
 
     def test_ipv6addr_linklocal(self):
         try:
