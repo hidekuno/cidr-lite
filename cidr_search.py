@@ -19,7 +19,7 @@ class EvalIpException(Exception):
     def __str__(self):
         return self.message
 
-def eval_ipaddr(ipaddr,cursor):
+def eval_ipaddr(ipaddr,cursor,city_mode):
     try:
         ip = ipaddress.ip_address(ipaddr)
         if ip.is_private == True:
@@ -53,20 +53,34 @@ def eval_ipaddr(ipaddr,cursor):
         """)
 
     if country:
-        return format("%s,%s,%s,AS%s" % (country + provider))
+        if city_mode:
+            city = get_ip_record(
+                """
+                select city
+                from (select addr, city, prefixlen from city_v%d where addr like ?)
+                where addr like substr(?,1,prefixlen) || ?
+                """)
+            return format("%s,%s,%s,AS%s,%s" % (country + provider + city))
+        else:
+            return format("%s,%s,%s,AS%s" % (country + provider))
     else:
         raise EvalIpException("Not Found")
 
-def do_eval_ipaddr(ipaddr,cursor):
+def do_eval_ipaddr(ipaddr,cursor,city_mode):
     try:
-        result = eval_ipaddr(ipaddr,cursor)
+        result = eval_ipaddr(ipaddr,cursor,city_mode)
         print(result)
     except EvalIpException as e:
         print(e)
 
+def get_city_mode(cursor):
+    cursor.execute("select count(*) from sqlite_master where type='table' and name like 'city_v%'")
+    return (2 == cursor.fetchone()[0])
+
 def repl(cursor):
     print("######## Please Input IP Adress #######\n")
 
+    city_mode = get_city_mode(cursor)
     while True:
         try:
             ipaddr = input("<cidr-lite> ")
@@ -80,7 +94,7 @@ def repl(cursor):
         if ipaddr == "quit":
             break
 
-        do_eval_ipaddr(ipaddr,cursor)
+        do_eval_ipaddr(ipaddr,cursor,city_mode)
 
 if __name__ == "__main__":
 

@@ -13,6 +13,7 @@ class IpAttribute:
             self.fmt_bin = '08b'
             self.csvfile = 'cidr.txt'
             self.asn_csvfile = 'asn.csv'
+            self.city_csvfile = 'cidr_city.txt'
         else:
             self.delimiter = ':'
             self.radix = 16
@@ -20,6 +21,7 @@ class IpAttribute:
             self.fmt_bin = '016b'
             self.csvfile = 'cidr6.txt'
             self.asn_csvfile = 'asn6.csv'
+            self.city_csvfile = 'cidr_city6.txt'
 
     def bin_addr(self, ip):
         return "".join([format(int(x, self.radix),self.fmt_bin) for x in ip.exploded.split(self.delimiter)])
