@@ -5,7 +5,6 @@
 # hidekuno@gmail.com
 #
 import os,os.path
-import codecs
 import sys
 import zipfile
 import urllib.request
@@ -59,7 +58,7 @@ def extract_zipfile(geofile,obj):
             base = csv.split('/')[1]
             if base in REGION_GROUP:
                 z.extract(csv, path=WORK_DIR)
-                with codecs.open(os.path.join(WORK_DIR, csv),'r','utf-8') as fd:
+                with open(os.path.join(WORK_DIR, csv),'r') as fd:
                     for line in fd:
                         rec = line.rstrip().split(",")
                         regions[rec[0]] = obj.getName(rec)
@@ -80,9 +79,9 @@ def extract_zipfile(geofile,obj):
 def make_cidr_file(version,regions,ipvfile,obj):
 
     attr = cidr_ipattr.IpAttribute(version)
-    wfd = codecs.open(os.path.join(os.sep,'tmp',obj.gefCsvName(attr)),'w','utf-8')
+    wfd = open(os.path.join(os.sep,'tmp',obj.gefCsvName(attr)),'w')
 
-    with codecs.open(ipvfile,'r','utf-8') as fd:
+    with open(ipvfile,'r') as fd:
         for line in fd:
             rec = line.rstrip().split(",")
             if rec[0][:7] == "network":
@@ -101,9 +100,9 @@ def make_cidr_file(version,regions,ipvfile,obj):
 
 def make_asn_file(version,ipvfile):
     attr = cidr_ipattr.IpAttribute(version)
-    wfd = codecs.open(os.path.join(os.sep,'tmp', attr.asn_csvfile),'w','utf-8')
+    wfd = open(os.path.join(os.sep,'tmp', attr.asn_csvfile),'w')
 
-    with codecs.open(ipvfile,'r','utf-8') as fd:
+    with open(ipvfile,'r') as fd:
         next(csv.reader(fd))
         for r in csv.reader(fd):
             cidr = ipaddress.ip_network(r[0])
