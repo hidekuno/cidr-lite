@@ -54,22 +54,22 @@ def extract_zipfile(geofile,obj):
     zip_filename = os.path.join(WORK_DIR, geofile + '.zip')
 
     with zipfile.ZipFile(zip_filename,'r') as z:
-        for csv in z.namelist():
-            base = csv.split('/')[1]
+        for csv_file in z.namelist():
+            base = csv_file.split('/')[1]
             if base in REGION_GROUP:
-                z.extract(csv, path=WORK_DIR)
-                with open(os.path.join(WORK_DIR, csv),'r') as fd:
+                z.extract(csv_file, path=WORK_DIR)
+                with open(os.path.join(WORK_DIR, csv_file),'r') as fd:
                     for line in fd:
                         rec = line.rstrip().split(",")
                         regions[rec[0]] = obj.getName(rec)
 
             if base in IPV4_GROUP:
-                z.extract(csv, path=WORK_DIR)
-                ipvfile = os.path.join(WORK_DIR, csv)
+                z.extract(csv_file, path=WORK_DIR)
+                ipvfile = os.path.join(WORK_DIR, csv_file)
 
             if base in IPV6_GROUP:
-                z.extract(csv, path=WORK_DIR)
-                ipv6file = os.path.join(WORK_DIR, csv)
+                z.extract(csv_file, path=WORK_DIR)
+                ipv6file = os.path.join(WORK_DIR, csv_file)
 
     if not ipvfile or not ipv6file:
         sys.exit(1)

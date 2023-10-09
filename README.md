@@ -14,8 +14,9 @@ IP address search tool
 cd ${HOME}
 git clone https://github.com/hidekuno/cidr-lite
 cd cidr-lite
-python3 cidr_create_geoip.py --token ${your_token} >/tmp/cidr.txt
+python3 cidr_create_geoip.py --token ${your_token}
 sqlite3 database.cidr '.read init.sql'
+sqlite3 database.cidr '.read city.sql'
 ```
 
 ## Test
