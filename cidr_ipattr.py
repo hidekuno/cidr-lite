@@ -7,21 +7,26 @@
 class IpAttribute:
     def __init__(self, version):
         if version == 4:
-            self.delimiter = '.'
+            self.delimiter = "."
             self.radix = 10
             self.matches = 8
-            self.fmt_bin = '08b'
-            self.csvfile = 'cidr.txt'
-            self.asn_csvfile = 'asn.csv'
-            self.city_csvfile = 'cidr_city.txt'
+            self.fmt_bin = "08b"
+            self.csvfile = "cidr.txt"
+            self.asn_csvfile = "asn.csv"
+            self.city_csvfile = "cidr_city.txt"
         else:
-            self.delimiter = ':'
+            self.delimiter = ":"
             self.radix = 16
             self.matches = 19
-            self.fmt_bin = '016b'
-            self.csvfile = 'cidr6.txt'
-            self.asn_csvfile = 'asn6.csv'
-            self.city_csvfile = 'cidr_city6.txt'
+            self.fmt_bin = "016b"
+            self.csvfile = "cidr6.txt"
+            self.asn_csvfile = "asn6.csv"
+            self.city_csvfile = "cidr_city6.txt"
 
     def bin_addr(self, ip):
-        return "".join([format(int(x, self.radix),self.fmt_bin) for x in ip.exploded.split(self.delimiter)])
+        return "".join(
+            [
+                format(int(x, self.radix), self.fmt_bin)
+                for x in ip.exploded.split(self.delimiter)
+            ]
+        )
