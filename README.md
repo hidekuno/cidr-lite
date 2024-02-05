@@ -44,3 +44,27 @@ cd cidr-lite/docker
 docker build -t ${yourid}/cidr-lite --file=Dockerfile --build-arg token=${YOUR_TOKEN_ID} .
 docker run -it --name cidr-lite ${yourid}/cidr-lite python3 /root/cidr_search.py
 ```
+
+## fastapi
+### Requirement
+- fastapi installed.
+- uvicorn installed.
+- databases installed.
+- aiosqlite installed.
+- SQLAlchemy installed.
+- pydantic installed.
+
+### Run
+```
+cd ${HOME}/cidr_lite
+pip3 install "fastapi[all]"
+pip3 install databases
+pip3 install aiosqlite
+
+python3 -m uvicorn cidr_api:app --reload
+```
+
+### search country,ASN,city
+```
+curl -v http://localhost:8000/search?ipv4=23.218.95.131
+```
