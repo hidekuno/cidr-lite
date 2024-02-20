@@ -3,28 +3,28 @@
 #
 # python -m uvicorn cidr_api2:app --reload
 #
-# ex.) curl -X POST -H "Content-Type: application/json" -d '{"addr": "11000000101010000000000100000000", "prefixlen": 24, "cidr": "192.168.1.0/24", "country": "JP"}' -v http://localhost:8000/ipv4/country
+# ex.) curl -X POST -H "Content-Type: application/json" -d '{"cidr": "192.168.1.0/24", "country": "JP"}' -v http://localhost:8000/ipv4/country
 #
-# ex.) curl -X POST -H "Content-Type: application/json" -d '{"addr": "11000000101010000000000100000000", "prefixlen": 24, "cidr": "192.168.1.0/24","asn": 10000, "provider": "Mukogawa Net."}' -v http://localhost:8000/ipv4/asn
+# ex.) curl -X POST -H "Content-Type: application/json" -d '{"cidr": "192.168.1.0/24","asn": 10000, "provider": "Mukogawa Net."}' -v http://localhost:8000/ipv4/asn
 #
-# ex.) curl -X POST -H "Content-Type: application/json" -d '{"addr": "11000000101010000000000100000000", "prefixlen": 24, "cidr": "192.168.1.0/24", "city": "兵庫県尼崎市"}' -v http://localhost:8000/ipv4/city
+# ex.) curl -X POST -H "Content-Type: application/json" -d '{"cidr": "192.168.1.0/24", "city": "兵庫県尼崎市"}' -v http://localhost:8000/ipv4/city
 #
 # ex.) curl -v http://localhost:8000/search?ipv4=192.168.1.2
 #
-# ex. curl -X POST -H "Content-Type: application/json" -d '{"addr": "11000000101010000000001100000000", "prefixlen": 24, "cidr": "192.168.3.0/24", "country": "JP","asn": 10001, "provider": "Mukogawa2 Net.", "city": "兵庫県宝塚市"}' -v http://localhost:8000/ipv4
+# ex. curl -X POST -H "Content-Type: application/json" -d '{"cidr": "192.168.3.0/24", "country": "JP","asn": 10001, "provider": "Mukogawa2 Net.", "city": "兵庫県宝塚市"}' -v http://localhost:8000/ipv4
 #
 # ex.) curl -v http://localhost:8000/search?ipv4=192.168.3.2
 #
+# ex.) curl -X PUT -H "Content-Type: application/json" -d '{"cidr": "192.168.3.0/24", "country": "JP","asn": 10002, "provider": "Mukogawa2 Net.", "city": "兵庫県伊丹市"}' -v http://localhost:8000/ipv4?cidr=192.168.3.0/24
+#
 # ex.) curl -X DELETE -v http://localhost:8000/ipv4?cidr=192.168.3.0/24
 #
-# ex.) curl -X PUT -H "Content-Type: application/json" -d '{"addr": "11000000101010000000001100000000", "prefixlen": 24, "cidr": "192.168.3.0/24", "country": "JP","asn": 10002, "provider": "Mukogawa2 Net.", "city": "兵庫県伊丹市"}' -v http://localhost:8000/ipv4?cidr=192.168.3.0/24
-#
-# curl -v http://localhost:8000/search?ipv4=192.168.3.2
+# ex.) curl -v http://localhost:8000/search?ipv4=192.168.3.2
 #
 # hidekuno@gmail.com
 #
 from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, IPvAnyAddress, IPvAnyNetwork
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -33,17 +33,24 @@ from sqlalchemy import Column, String, SmallInteger, Integer
 
 import os
 import ipaddress
-from pydantic import IPvAnyAddress,IPvAnyNetwork
 import cidr_ipattr
 
 
 class IpGeoModel(BaseModel):
-    addr: str = Field(..., min_length=32, max_length=32)
-    prefixlen: int
-    cidr: str = Field(..., min_length=9, max_length=18)
+    cidr: IPvAnyNetwork
 
     class config:
         orm_mode = True
+
+    def make_dictionary(self):
+        m = self.dict()
+        attr = cidr_ipattr.IpAttribute(4)
+        net_addr = ipaddress.ip_network(m['cidr'])
+
+        m['cidr'] = str(m['cidr'])
+        m['addr'] = attr.bin_addr(net_addr.network_address)
+        m['prefixlen'] = net_addr.prefixlen
+        return m
 
 
 class Country(IpGeoModel):
@@ -195,28 +202,28 @@ async def read_ipgeo(ipv4: IPvAnyAddress):
 
 @app.post("/ipv4/country", response_model=Country)
 async def create_country(country: Country, db: Session = Depends(get_db)):
-    values = country.dict()
+    values = country.make_dictionary()
     do_insert(db, CountryTable(**values))
     return values
 
 
 @app.post("/ipv4/asn", response_model=Asn)
 async def create_asn(asn: Asn, db: Session = Depends(get_db)):
-    values = asn.dict()
+    values = asn.make_dictionary()
     do_insert(db, AsnTable(**values))
     return values
 
 
 @app.post("/ipv4/city", response_model=City)
 async def create_city(city: City, db: Session = Depends(get_db)):
-    values = city.dict()
+    values = city.make_dictionary()
     do_insert(db, CityTable(**values))
     return values
 
 
 @app.post("/ipv4", response_model=IpGeo)
 async def create_ipv4(ipgeo: IpGeo, db: Session = Depends(get_db)):
-    values = ipgeo.dict()
+    values = ipgeo.make_dictionary()
     do_insert_multi(
         db,
         [
@@ -252,7 +259,7 @@ async def delete_ipv4(cidr: IPvAnyNetwork, db: Session = Depends(get_db)):
 
 @app.put("/ipv4", response_model=IpGeo)
 async def update_ipv4(cidr: IPvAnyNetwork, ipgeo: IpGeo, db: Session = Depends(get_db)):
-    values = ipgeo.dict()
+    values = ipgeo.make_dictionary()
     (country, asn, city) = get_ip_records(db, str(cidr))
 
     do_update_country(country, values)
