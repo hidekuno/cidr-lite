@@ -7,14 +7,24 @@
 #
 # hidekuno@gmail.com
 #
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Request, Security, Depends, HTTPException
+from fastapi.security.api_key import APIKeyHeader
 from databases import Database
 import os
 import ipaddress
 from pydantic import IPvAnyAddress
 import cidr_ipattr
 
-app = FastAPI()
+
+async def check_api(request: Request,
+                    api_key: str = Security(APIKeyHeader(name='x-api-key', auto_error=False))):
+
+    API_KEY = 'apitest'
+    if (not api_key or api_key != API_KEY):
+        raise HTTPException(status_code=401, detail='Invalid or missing API Key')
+
+
+app = FastAPI(dependencies=[Depends(check_api)])
 dbpath = os.path.join(os.environ.get("HOME"), "database.cidr")
 database = Database("sqlite:///" + dbpath)
 
@@ -30,7 +40,7 @@ async def shutdown():
 
 
 @app.get("/")
-async def read_root():
+def read_root():
     return {"Hello": "World"}
 
 
