@@ -23,7 +23,8 @@
 #
 # hidekuno@gmail.com
 #
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, Request, Security, Depends, HTTPException
+from fastapi.security.api_key import APIKeyHeader,APIKey
 from pydantic import BaseModel, Field, IPvAnyAddress, IPvAnyNetwork
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -34,6 +35,17 @@ from sqlalchemy import Column, String, SmallInteger, Integer
 import os
 import ipaddress
 import cidr_ipattr
+
+def check_api(request: Request,
+                    api_key: str = Security(APIKeyHeader(name='x-api-key', auto_error=False))):
+    safe_clients = ['127.0.0.1']
+    API_KEY = 'apitest'
+
+    if (not api_key or api_key != API_KEY):
+        raise HTTPException(status_code=401, detail='Invalid or missing API Key')
+
+    if request.client.host not in safe_clients:
+        raise HTTPException(status_code=403, detail='Forbidden')
 
 
 class IpGeoModel(BaseModel):
@@ -172,12 +184,12 @@ def get_ip_records(db: Session, cidr: str):
 
 
 @app.get("/")
-async def read_root():
+def read_root():
     return {"Hello": "World"}
 
 
 @app.get("/search")
-async def read_ipgeo(ipv4: IPvAnyAddress):
+def read_ipgeo(ipv4: IPvAnyAddress):
     attr = cidr_ipattr.IpAttribute(4)
     param = attr.bin_addr(ipaddress.ip_address(ipv4))
 
@@ -200,29 +212,29 @@ async def read_ipgeo(ipv4: IPvAnyAddress):
     return ipgeo
 
 
-@app.post("/ipv4/country", response_model=Country)
-async def create_country(country: Country, db: Session = Depends(get_db)):
+@app.post("/ipv4/country", response_model=Country, dependencies=[Depends(check_api)])
+def create_country(country: Country, db: Session = Depends(get_db)):
     values = country.make_dictionary()
     do_insert(db, CountryTable(**values))
     return values
 
 
-@app.post("/ipv4/asn", response_model=Asn)
-async def create_asn(asn: Asn, db: Session = Depends(get_db)):
+@app.post("/ipv4/asn", response_model=Asn, dependencies=[Depends(check_api)])
+def create_asn(asn: Asn, db: Session = Depends(get_db)):
     values = asn.make_dictionary()
     do_insert(db, AsnTable(**values))
     return values
 
 
-@app.post("/ipv4/city", response_model=City)
-async def create_city(city: City, db: Session = Depends(get_db)):
+@app.post("/ipv4/city", response_model=City, dependencies=[Depends(check_api)])
+def create_city(city: City, db: Session = Depends(get_db)):
     values = city.make_dictionary()
     do_insert(db, CityTable(**values))
     return values
 
 
-@app.post("/ipv4", response_model=IpGeo)
-async def create_ipv4(ipgeo: IpGeo, db: Session = Depends(get_db)):
+@app.post("/ipv4", response_model=IpGeo, dependencies=[Depends(check_api)])
+def create_ipv4(ipgeo: IpGeo, db: Session = Depends(get_db)):
     values = ipgeo.make_dictionary()
     do_insert_multi(
         db,
@@ -251,14 +263,14 @@ async def create_ipv4(ipgeo: IpGeo, db: Session = Depends(get_db)):
     return values
 
 
-@app.delete("/ipv4", status_code=201)
-async def delete_ipv4(cidr: IPvAnyNetwork, db: Session = Depends(get_db)):
+@app.delete("/ipv4", status_code=201, dependencies=[Depends(check_api)])
+def delete_ipv4(cidr: IPvAnyNetwork, db: Session = Depends(get_db)):
     do_delete_multi(db, list(get_ip_records(db, str(cidr))))
     return "OK"
 
 
-@app.put("/ipv4", response_model=IpGeo)
-async def update_ipv4(cidr: IPvAnyNetwork, ipgeo: IpGeo, db: Session = Depends(get_db)):
+@app.put("/ipv4", response_model=IpGeo, dependencies=[Depends(check_api)])
+def update_ipv4(cidr: IPvAnyNetwork, ipgeo: IpGeo, db: Session = Depends(get_db)):
     values = ipgeo.make_dictionary()
     (country, asn, city) = get_ip_records(db, str(cidr))
 
