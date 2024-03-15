@@ -40,7 +40,7 @@ python3 cidr_search.py
 ```
 cd ${HOME}
 git clone https://github.com/hidekuno/cidr-lite
-cd cidr-lite/docker
+cd cidr-lite/cli/docker
 docker build -t ${yourid}/cidr-lite --file=Dockerfile --build-arg token=${YOUR_TOKEN_ID} .
 docker run -it --name cidr-lite ${yourid}/cidr-lite python3 /root/cidr_search.py
 ```

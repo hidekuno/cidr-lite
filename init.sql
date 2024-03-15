@@ -1,7 +1,7 @@
 CREATE TABLE ipaddr_v4 (
   addr       char(32),
   prefixlen  smallint,
-  cidr       text,
+  cidr       varchar(18),
   country    char(2)
 );
 .separator \t
@@ -10,7 +10,7 @@ CREATE TABLE ipaddr_v4 (
 CREATE TABLE ipaddr_v6 (
   addr       char(128),
   prefixlen  smallint,
-  cidr       text,
+  cidr       varchar(43),
   country    char(2)
 );
 .separator \t
@@ -22,7 +22,7 @@ CREATE INDEX ipaddr_v6_idx1 ON ipaddr_v6(addr);
 CREATE TABLE asn_v4 (
   addr       char(32),
   prefixlen  smallint,
-  cidr       text,
+  cidr       varchar(18),
   asn        int,
   provider   text
 );
@@ -32,7 +32,7 @@ CREATE TABLE asn_v4 (
 CREATE TABLE asn_v6 (
   addr       char(128),
   prefixlen  smallint,
-  cidr       text,
+  cidr       varchar(43),
   asn        int,
   provider   text
 );

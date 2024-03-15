@@ -1,7 +1,7 @@
 #
 # IP Address Search Rest API
 #
-# python -m uvicorn cidr_api2:app --reload
+# python -m uvicorn cidr_api2:app --reload --host 0.0.0.0
 #
 # ex.) curl -X POST -H "Content-Type: application/json" -d '{"cidr": "192.168.1.0/24", "country": "JP"}' -v http://localhost:8000/ipv4/country
 #
@@ -24,7 +24,7 @@
 # hidekuno@gmail.com
 #
 from fastapi import FastAPI, Request, Security, Depends, HTTPException
-from fastapi.security.api_key import APIKeyHeader,APIKey
+from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel, Field, IPvAnyAddress, IPvAnyNetwork
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -32,7 +32,6 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.sql import text
 from sqlalchemy import Column, String, SmallInteger, Integer
 
-import os
 import ipaddress
 import cidr_ipattr
 
@@ -91,7 +90,7 @@ Base = declarative_base()
 class IpGeoBase:
     addr = Column(String(32), nullable=False, primary_key=True)
     prefixlen = Column(SmallInteger, nullable=False)
-    cidr = Column(String, nullable=False)
+    cidr = Column(String(18), nullable=False)
 
 
 class CountryTable(Base, IpGeoBase):
@@ -113,11 +112,18 @@ class CityTable(Base, IpGeoBase):
     city = Column(String, nullable=False)
 
 
+def createMySQL():
+    user = 'cidr'
+    password = 'cidr'
+    db_name = 'cidr'
+    host = 'db'
+    port = 3306
+
+    return create_engine(f'mysql+mysqlconnector://{user}:{password}@{host}:{port}/{db_name}')
+
+
 app = FastAPI()
-dbpath = os.path.join(os.environ.get("HOME"), "database.cidr")
-engine = create_engine(
-    "sqlite:///" + dbpath, connect_args={"check_same_thread": False}, echo=True
-)
+engine =  createMySQL()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -196,9 +202,9 @@ def read_ipgeo(ipv4: IPvAnyAddress):
     query = """
     select cidr, country, provider, asn, city
     from
-    (select cidr, country from ipaddr_v4 where addr like :param_like and addr like substr(:param,1,prefixlen) || '%'),
-    (select provider, asn from asn_v4 where addr like :param_like and addr like substr(:param,1,prefixlen) || '%'),
-    (select city from city_v4 where addr like :param_like and addr like substr(:param,1,prefixlen) || '%')
+    (select cidr, country from ipaddr_v4 where addr like :param_like and addr like concat(substring(:param,1,prefixlen),'%')) as country,
+    (select provider, asn from asn_v4 where addr like :param_like and addr like concat(substring(:param,1,prefixlen),'%')) as asn,
+    (select city from city_v4 where addr like :param_like and addr like concat(substring(:param,1,prefixlen),'%')) as city
     """
     ipgeo = (
         engine.execute(

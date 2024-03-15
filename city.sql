@@ -1,7 +1,7 @@
 CREATE TABLE city_v4 (
   addr       char(32),
   prefixlen  smallint,
-  cidr       text,
+  cidr       varchar(18),
   city       text
 );
 .separator \t
@@ -10,7 +10,7 @@ CREATE TABLE city_v4 (
 CREATE TABLE city_v6 (
   addr       char(128),
   prefixlen  smallint,
-  cidr       text,
+  cidr       varchar(43),
   city       text
 );
 .separator \t
