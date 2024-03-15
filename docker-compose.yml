@@ -1,0 +1,61 @@
+version: '3'
+
+services:
+  db:
+    build:
+      context: .
+      dockerfile: docker/database/Dockerfile
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - ./db_data:/var/lib/mysql
+    ports:
+      - 33306:3306
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=hogehoge
+      - MYSQL_DATABASE=cidr
+      - MYSQL_USER=cidr
+      - MYSQL_PASSWORD=cidr
+      - TZ=Japan
+      - LANG=ja_JP.UTF-8
+    container_name: cidr_db
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    expose:
+      - 8000
+    ports:
+      - 8013:8000
+    restart: always
+    links:
+      - db
+    stdin_open: true
+    privileged: true
+    environment:
+      - "TZ=JST-9"
+    container_name: cidr_api
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile
+    expose:
+      - 80
+    ports:
+      - 8012:80
+    restart: always
+    links:
+      - api
+    stdin_open: true
+    privileged: true
+    environment:
+      - "TZ=JST-9"
+    container_name: cidr_web
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 10.250.10.128/25

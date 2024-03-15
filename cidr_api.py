@@ -1,7 +1,7 @@
 #
 # IP Address Search Rest API
 #
-# python -m uvicorn cidr_api:app --reload
+# python -m uvicorn cidr_api:app --reload --host 0.0.0.0
 #
 # ex.) curl -v http://localhost:8000/search?ipv4=192.168.3.2
 #
