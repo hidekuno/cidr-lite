@@ -1,25 +1,25 @@
 #
 # IP Address Search Rest API
 #
-# python -m uvicorn cidr_api2:app --reload --host 0.0.0.0
+# docker run
 #
-# ex.) curl -X POST -H "Content-Type: application/json" -d '{"cidr": "192.168.1.0/24", "country": "JP"}' -v http://localhost:8000/ipv4/country
+# ex.) curl -X POST -H "x-api-key: apitest" -H "Content-Type: application/json" -d '{"cidr": "192.168.1.0/24", "country": "JP"}' -v http://localhost:8012/ipv4/country
 #
-# ex.) curl -X POST -H "Content-Type: application/json" -d '{"cidr": "192.168.1.0/24","asn": 10000, "provider": "Mukogawa Net."}' -v http://localhost:8000/ipv4/asn
+# ex.) curl -X POST -H "x-api-key: apitest" -H "Content-Type: application/json" -d '{"cidr": "192.168.1.0/24","asn": 10000, "provider": "Mukogawa Net."}' -v http://localhost:8012/ipv4/asn
 #
-# ex.) curl -X POST -H "Content-Type: application/json" -d '{"cidr": "192.168.1.0/24", "city": "兵庫県尼崎市"}' -v http://localhost:8000/ipv4/city
+# ex.) curl -X POST -H "x-api-key: apitest" -H "Content-Type: application/json" -d '{"cidr": "192.168.1.0/24", "city": "兵庫県尼崎市"}' -v http://localhost:8012/ipv4/city
 #
-# ex.) curl -v http://localhost:8000/search?ipv4=192.168.1.2
+# ex.) curl -v http://localhost:8012/search?ipv4=192.168.1.2
 #
-# ex. curl -X POST -H "Content-Type: application/json" -d '{"cidr": "192.168.3.0/24", "country": "JP","asn": 10001, "provider": "Mukogawa2 Net.", "city": "兵庫県宝塚市"}' -v http://localhost:8000/ipv4
+# ex. curl -X POST -H "x-api-key: apitest" -H "Content-Type: application/json" -d '{"cidr": "192.168.3.0/24", "country": "JP","asn": 10001, "provider": "Mukogawa2 Net.", "city": "兵庫県宝塚市"}' -v http://localhost:8012/ipv4
 #
-# ex.) curl -v http://localhost:8000/search?ipv4=192.168.3.2
+# ex.) curl -v http://localhost:8012/search?ipv4=192.168.3.2
 #
-# ex.) curl -X PUT -H "Content-Type: application/json" -d '{"cidr": "192.168.3.0/24", "country": "JP","asn": 10002, "provider": "Mukogawa2 Net.", "city": "兵庫県伊丹市"}' -v http://localhost:8000/ipv4?cidr=192.168.3.0/24
+# ex.) curl -X PUT -H "x-api-key: apitest" -H "Content-Type: application/json" -d '{"cidr": "192.168.3.0/24", "country": "JP","asn": 10002, "provider": "Mukogawa2 Net.", "city": "兵庫県伊丹市"}' -v http://localhost:8012/ipv4?cidr=192.168.3.0/24
 #
-# ex.) curl -X DELETE -v http://localhost:8000/ipv4?cidr=192.168.3.0/24
+# ex.) curl -X DELETE -H "x-api-key: apitest" -v http://localhost:8012/ipv4?cidr=192.168.3.0/24
 #
-# ex.) curl -v http://localhost:8000/search?ipv4=192.168.3.2
+# ex.) curl -v http://localhost:8012/search?ipv4=192.168.3.2
 #
 # hidekuno@gmail.com
 #
@@ -36,14 +36,15 @@ import ipaddress
 import cidr_ipattr
 
 def check_api(request: Request,
-                    api_key: str = Security(APIKeyHeader(name='x-api-key', auto_error=False))):
-    safe_clients = ['127.0.0.1']
+              api_key: str = Security(APIKeyHeader(name='x-api-key', auto_error=False))):
+    safe_clients = ['127.0.0.1', '10.250.10.129']
     API_KEY = 'apitest'
 
     if (not api_key or api_key != API_KEY):
         raise HTTPException(status_code=401, detail='Invalid or missing API Key')
 
-    if request.client.host not in safe_clients:
+    if (request.client.host not in safe_clients and
+        request.headers.get('x-forwarded-for') not in safe_clients):
         raise HTTPException(status_code=403, detail='Forbidden')
 
 

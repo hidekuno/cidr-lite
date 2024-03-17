@@ -1,4 +1,4 @@
-FROM tiangolo/uvicorn-gunicorn-fastapi:python3.9
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.9-slim
 
 WORKDIR /app
 COPY ./cidr_api2.py /app
