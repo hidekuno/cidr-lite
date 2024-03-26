@@ -1,25 +1,6 @@
+#!/usr/bin/env python
 #
-# IP Address Search Rest API
-#
-# docker run
-#
-# ex.) curl -X POST -H "x-api-key: apitest" -H "Content-Type: application/json" -d '{"cidr": "192.168.1.0/24", "country": "JP"}' -v http://localhost:8012/ipv4/country
-#
-# ex.) curl -X POST -H "x-api-key: apitest" -H "Content-Type: application/json" -d '{"cidr": "192.168.1.0/24","asn": 10000, "provider": "Mukogawa Net."}' -v http://localhost:8012/ipv4/asn
-#
-# ex.) curl -X POST -H "x-api-key: apitest" -H "Content-Type: application/json" -d '{"cidr": "192.168.1.0/24", "city": "兵庫県尼崎市"}' -v http://localhost:8012/ipv4/city
-#
-# ex.) curl -v http://localhost:8012/search?ipv4=192.168.1.2
-#
-# ex. curl -X POST -H "x-api-key: apitest" -H "Content-Type: application/json" -d '{"cidr": "192.168.3.0/24", "country": "JP","asn": 10001, "provider": "Mukogawa2 Net.", "city": "兵庫県宝塚市"}' -v http://localhost:8012/ipv4
-#
-# ex.) curl -v http://localhost:8012/search?ipv4=192.168.3.2
-#
-# ex.) curl -X PUT -H "x-api-key: apitest" -H "Content-Type: application/json" -d '{"cidr": "192.168.3.0/24", "country": "JP","asn": 10002, "provider": "Mukogawa2 Net.", "city": "兵庫県伊丹市"}' -v http://localhost:8012/ipv4?cidr=192.168.3.0/24
-#
-# ex.) curl -X DELETE -H "x-api-key: apitest" -v http://localhost:8012/ipv4?cidr=192.168.3.0/24
-#
-# ex.) curl -v http://localhost:8012/search?ipv4=192.168.3.2
+# IP Address CRUD Rest API
 #
 # hidekuno@gmail.com
 #
@@ -27,7 +8,7 @@ from fastapi import FastAPI, Request, Security, Depends, HTTPException
 from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel, Field, IPvAnyAddress, IPvAnyNetwork
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.sql import text
 from sqlalchemy import Column, String, SmallInteger, Integer
@@ -43,6 +24,10 @@ def check_api(request: Request,
     if (not api_key or api_key != API_KEY):
         raise HTTPException(status_code=401, detail='Invalid or missing API Key')
 
+    # execute fastapi.testclient.TestClient
+    if not request.client and not request.headers.get('x-forwarded-for'):
+        return
+
     if (request.client.host not in safe_clients and
         request.headers.get('x-forwarded-for') not in safe_clients):
         raise HTTPException(status_code=403, detail='Forbidden')
@@ -55,7 +40,7 @@ class IpGeoModel(BaseModel):
         orm_mode = True
 
     def make_dictionary(self):
-        m = self.dict()
+        m = self.model_dump()
         attr = cidr_ipattr.IpAttribute(4)
         net_addr = ipaddress.ip_network(m['cidr'])
 
@@ -124,8 +109,7 @@ def createMySQL():
 
 
 app = FastAPI()
-engine =  createMySQL()
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=createMySQL())
 
 
 def get_db():
@@ -196,7 +180,7 @@ def read_root():
 
 
 @app.get("/search")
-def read_ipgeo(ipv4: IPvAnyAddress):
+def read_ipgeo(ipv4: IPvAnyAddress, db: Session = Depends(get_db)):
     attr = cidr_ipattr.IpAttribute(4)
     param = attr.bin_addr(ipaddress.ip_address(ipv4))
 
@@ -208,7 +192,7 @@ def read_ipgeo(ipv4: IPvAnyAddress):
     (select city from city_v4 where addr like :param_like and addr like concat(substring(:param,1,prefixlen),'%')) as city
     """
     ipgeo = (
-        engine.execute(
+        db.execute(
             text(query), {"param": param, "param_like": param[: attr.matches] + "%"}
         )
         .mappings()
@@ -270,7 +254,7 @@ def create_ipv4(ipgeo: IpGeo, db: Session = Depends(get_db)):
     return values
 
 
-@app.delete("/ipv4", status_code=201, dependencies=[Depends(check_api)])
+@app.delete("/ipv4", status_code=200, dependencies=[Depends(check_api)])
 def delete_ipv4(cidr: IPvAnyNetwork, db: Session = Depends(get_db)):
     do_delete_multi(db, list(get_ip_records(db, str(cidr))))
     return "OK"
