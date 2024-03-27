@@ -12,9 +12,11 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.sql import text
 from sqlalchemy import Column, String, SmallInteger, Integer
+from sqlalchemy.exc import IntegrityError
 
 import ipaddress
 import cidr_ipattr
+
 
 def check_api(request: Request,
               api_key: str = Security(APIKeyHeader(name='x-api-key', auto_error=False))):
@@ -125,11 +127,18 @@ def do_insert(db: Session, record: Base):
 
 
 def do_insert_multi(db: Session, records: list[Base]):
-    for record in records:
-        db.add(record)
-    db.commit()
-    for record in records:
-        db.refresh(record)
+    try:
+        for record in records:
+            db.add(record)
+        db.commit()
+        for record in records:
+            db.refresh(record)
+    except IntegrityError as e:
+        # 23000 is duplicate error of MySQL
+        if e.orig.sqlstate == '23000':
+            raise HTTPException(status_code=422, detail='Duplicate Error')
+        else:
+            raise e
 
 
 def do_delete(db: Session, record: Base):
@@ -176,7 +185,7 @@ def get_ip_records(db: Session, cidr: str):
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return "Hello,World"
 
 
 @app.get("/search")
