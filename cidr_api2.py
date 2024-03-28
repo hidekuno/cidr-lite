@@ -208,7 +208,7 @@ def read_ipgeo(ipv4: IPvAnyAddress, db: Session = Depends(get_db)):
         .first()
     )
     if not ipgeo:
-        raise HTTPException(status_code=404, detail="Ip not found")
+        raise HTTPException(status_code=404, detail="IP not found")
     return ipgeo
 
 
