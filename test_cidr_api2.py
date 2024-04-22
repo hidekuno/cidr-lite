@@ -180,7 +180,7 @@ def test_delete():
 def test_error_post_country():
     json_data = {"cidr": "192.168.1.0/24", "country": "JP"}
     assert_body = make_assert_data(json_data, client.post, "/ipv4/country")
-    assert_body("ip_v4_network", cidr="a.a.a.a")
+    assert_body("ip_v4_network", cidr="2001:268:fa03:500:175:129:0:103")
     assert_body("string_too_short", country="J")
     assert_body("string_too_long", country="JP1")
     assert_body("string_type", country=10)
@@ -193,7 +193,7 @@ def test_error_post_asn():
         "provider": "Mukogawa Net.",
     }
     assert_body = make_assert_data(json_data, client.post, "/ipv4/asn")
-    assert_body("ip_v4_network", cidr="a.a.a.a")
+    assert_body("ip_v4_network", cidr="2001:268:fa03:500:175:129:0:103")
     assert_body("int_parsing", asn="a")
     assert_body("string_type", provider=10)
 
@@ -204,7 +204,7 @@ def test_error_post_city():
         "city": "兵庫県尼崎市",
     }
     assert_body = make_assert_data(json_data, client.post, "/ipv4/city")
-    assert_body("ip_v4_network", cidr="a.a.a.a")
+    assert_body("ip_v4_network", cidr="2001:268:fa03:500:175:129:0:103")
     assert_body("string_type", city=10)
 
 
@@ -218,7 +218,7 @@ def test_error_post_all():
     }
 
     assert_body = make_assert_data(json_data, client.post, "/ipv4")
-    assert_body("ip_v4_network", cidr="a.a.a.a")
+    assert_body("ip_v4_network", cidr="2001:268:fa03:500:175:129:0:103")
     assert_body("string_too_short", country="J")
     assert_body("string_too_long", country="JP1")
     assert_body("string_type", country=10)
@@ -260,11 +260,11 @@ def test_error_put_all():
         "provider": "Mukogawa3 Net.",
         "city": "兵庫県芦屋市",
     }
-    assert_body = make_assert_data(json_data, client.put, "/ipv4?cidr=a.a.a.a")
+    assert_body = make_assert_data(json_data, client.put, "/ipv4?cidr=2001:268:fa03:500:175:129:0:103")
     assert_body("ip_v4_network")
 
     assert_body = make_assert_data(json_data, client.put, "/ipv4?cidr=192.168.3.0/24")
-    assert_body("ip_v4_network", cidr="a.a.a.a")
+    assert_body("ip_v4_network", cidr="2001:268:fa03:500:175:129:0:103")
     assert_body("string_too_short", country="J")
     assert_body("string_too_long", country="JP1")
     assert_body("string_type", country=10)
@@ -274,7 +274,7 @@ def test_error_put_all():
 
 
 def test_error_search():
-    response = client.get("/ipv4/search?ipv4=a.a.a.a")
+    response = client.get("/ipv4/search?ipv4=2001:268:fa03:500:175:129:0:103")
     assert response.status_code == 422
     assert response.json() == {
         "detail": [
@@ -282,7 +282,7 @@ def test_error_search():
                 "type": "ip_v4_address",
                 "loc": ["query", "ipv4"],
                 "msg": "Input is not a valid IPv4 address",
-                "input": "a.a.a.a",
+                "input": "2001:268:fa03:500:175:129:0:103",
             }
         ]
     }
@@ -310,7 +310,7 @@ def test_error_delete():
     headers = {
         "x-api-key": "apitest",
     }
-    response = client.delete("/ipv4?cidr=a.a.a.a", headers=headers)
+    response = client.delete("/ipv4?cidr=2001:268:fa03:500:175:129:0:103", headers=headers)
     assert response.status_code == 422
     assert response.json() == {
         "detail": [
@@ -318,7 +318,7 @@ def test_error_delete():
                 "type": "ip_v4_network",
                 "loc": ["query", "cidr"],
                 "msg": "Input is not a valid IPv4 network",
-                "input": "a.a.a.a",
+                "input": "2001:268:fa03:500:175:129:0:103",
             }
         ]
     }
