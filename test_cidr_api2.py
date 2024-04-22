@@ -142,7 +142,7 @@ def test_put_all():
 
 
 def test_search():
-    response = client.get("/search?ipv4=192.168.1.2")
+    response = client.get("/ipv4/search?ipv4=192.168.1.2")
     assert response.status_code == 200
     assert response.json() == {
         "cidr": "192.168.1.0/24",
@@ -152,7 +152,7 @@ def test_search():
         "city": "兵庫県尼崎市",
     }
 
-    response = client.get("/search?ipv4=192.168.3.2")
+    response = client.get("/ipv4/search?ipv4=192.168.3.2")
     assert response.status_code == 200
     assert response.json() == {
         "cidr": "192.168.3.0/24",
@@ -180,7 +180,7 @@ def test_delete():
 def test_error_post_country():
     json_data = {"cidr": "192.168.1.0/24", "country": "JP"}
     assert_body = make_assert_data(json_data, client.post, "/ipv4/country")
-    assert_body("ip_any_network", cidr="a.a.a.a")
+    assert_body("ip_v4_network", cidr="a.a.a.a")
     assert_body("string_too_short", country="J")
     assert_body("string_too_long", country="JP1")
     assert_body("string_type", country=10)
@@ -193,7 +193,7 @@ def test_error_post_asn():
         "provider": "Mukogawa Net.",
     }
     assert_body = make_assert_data(json_data, client.post, "/ipv4/asn")
-    assert_body("ip_any_network", cidr="a.a.a.a")
+    assert_body("ip_v4_network", cidr="a.a.a.a")
     assert_body("int_parsing", asn="a")
     assert_body("string_type", provider=10)
 
@@ -204,7 +204,7 @@ def test_error_post_city():
         "city": "兵庫県尼崎市",
     }
     assert_body = make_assert_data(json_data, client.post, "/ipv4/city")
-    assert_body("ip_any_network", cidr="a.a.a.a")
+    assert_body("ip_v4_network", cidr="a.a.a.a")
     assert_body("string_type", city=10)
 
 
@@ -218,7 +218,7 @@ def test_error_post_all():
     }
 
     assert_body = make_assert_data(json_data, client.post, "/ipv4")
-    assert_body("ip_any_network", cidr="a.a.a.a")
+    assert_body("ip_v4_network", cidr="a.a.a.a")
     assert_body("string_too_short", country="J")
     assert_body("string_too_long", country="JP1")
     assert_body("string_type", country=10)
@@ -261,10 +261,10 @@ def test_error_put_all():
         "city": "兵庫県芦屋市",
     }
     assert_body = make_assert_data(json_data, client.put, "/ipv4?cidr=a.a.a.a")
-    assert_body("ip_any_network")
+    assert_body("ip_v4_network")
 
     assert_body = make_assert_data(json_data, client.put, "/ipv4?cidr=192.168.3.0/24")
-    assert_body("ip_any_network", cidr="a.a.a.a")
+    assert_body("ip_v4_network", cidr="a.a.a.a")
     assert_body("string_too_short", country="J")
     assert_body("string_too_long", country="JP1")
     assert_body("string_type", country=10)
@@ -274,19 +274,19 @@ def test_error_put_all():
 
 
 def test_error_search():
-    response = client.get("/search?ipv4=a.a.a.a")
+    response = client.get("/ipv4/search?ipv4=a.a.a.a")
     assert response.status_code == 422
     assert response.json() == {
         "detail": [
             {
-                "type": "ip_any_address",
+                "type": "ip_v4_address",
                 "loc": ["query", "ipv4"],
-                "msg": "value is not a valid IPv4 or IPv6 address",
+                "msg": "Input is not a valid IPv4 address",
                 "input": "a.a.a.a",
             }
         ]
     }
-    response = client.get("/search")
+    response = client.get("/ipv4/search")
     assert response.status_code == 422
     assert response.json() == {
         "detail": [
@@ -299,7 +299,7 @@ def test_error_search():
             }
         ]
     }
-    response = client.get("/search?ipv4=172.17.0.11")
+    response = client.get("/ipv4/search?ipv4=172.17.0.11")
     assert response.status_code == 404
     assert response.json() == {
         "detail": "IP not found",
@@ -315,9 +315,9 @@ def test_error_delete():
     assert response.json() == {
         "detail": [
             {
-                "type": "ip_any_network",
+                "type": "ip_v4_network",
                 "loc": ["query", "cidr"],
-                "msg": "value is not a valid IPv4 or IPv6 network",
+                "msg": "Input is not a valid IPv4 network",
                 "input": "a.a.a.a",
             }
         ]

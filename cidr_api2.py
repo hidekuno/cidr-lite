@@ -6,16 +6,19 @@
 #
 from fastapi import FastAPI, Request, Security, Depends, HTTPException
 from fastapi.security.api_key import APIKeyHeader
-from pydantic import BaseModel, Field, IPvAnyAddress, IPvAnyNetwork
+from pydantic import BaseModel, Field
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.sql import text
 from sqlalchemy import Column, String, SmallInteger, Integer
 from sqlalchemy.exc import IntegrityError
-
-import ipaddress
+from typing import TypeVar, Generic
+from ipaddress import IPv4Address, IPv6Address, IPv4Network, ip_address, ip_network
 import cidr_ipattr
+
+
+T = TypeVar('T')
 
 
 def check_api(request: Request,
@@ -30,21 +33,20 @@ def check_api(request: Request,
     if not request.client and not request.headers.get('x-forwarded-for'):
         return
 
-    if (request.client.host not in safe_clients and
-        request.headers.get('x-forwarded-for') not in safe_clients):
+    if (request.client.host not in safe_clients) and (request.headers.get('x-forwarded-for') not in safe_clients):
         raise HTTPException(status_code=403, detail='Forbidden')
 
 
-class IpGeoModel(BaseModel):
-    cidr: IPvAnyNetwork
+class IpGeoModel(BaseModel, Generic[T]):
+    cidr: T
 
     class config:
         orm_mode = True
 
-    def make_dictionary(self):
+    def make_dictionary(self, version):
         m = self.model_dump()
-        attr = cidr_ipattr.IpAttribute(4)
-        net_addr = ipaddress.ip_network(m['cidr'])
+        attr = cidr_ipattr.IpAttribute(version)
+        net_addr = ip_network(m['cidr'])
 
         m['cidr'] = str(m['cidr'])
         m['addr'] = attr.bin_addr(net_addr.network_address)
@@ -52,20 +54,20 @@ class IpGeoModel(BaseModel):
         return m
 
 
-class Country(IpGeoModel):
+class Country(IpGeoModel[T]):
     country: str = Field(..., min_length=2, max_length=2)
 
 
-class Asn(IpGeoModel):
+class Asn(IpGeoModel[T]):
     asn: int = Field(...)
     provider: str = Field(...)
 
 
-class City(IpGeoModel):
+class City(IpGeoModel[T]):
     city: str = Field(...)
 
 
-class IpGeo(IpGeoModel):
+class IpGeo(IpGeoModel[T]):
     country: str = Field(..., min_length=2, max_length=2)
     asn: int = Field(...)
     provider: str = Field(...)
@@ -75,27 +77,52 @@ class IpGeo(IpGeoModel):
 Base = declarative_base()
 
 
-class IpGeoBase:
+class Ipv4GeoBase:
     addr = Column(String(32), nullable=False, primary_key=True)
     prefixlen = Column(SmallInteger, nullable=False)
     cidr = Column(String(18), nullable=False)
 
 
-class CountryTable(Base, IpGeoBase):
+class Ipv6GeoBase:
+    addr = Column(String(128), nullable=False, primary_key=True)
+    prefixlen = Column(SmallInteger, nullable=False)
+    cidr = Column(String(43), nullable=False)
+
+
+class IPv4CountryTable(Base, Ipv4GeoBase):
     __tablename__ = "ipaddr_v4"
 
     country = Column(String(2), nullable=False)
 
 
-class AsnTable(Base, IpGeoBase):
+class IPv4AsnTable(Base, Ipv4GeoBase):
     __tablename__ = "asn_v4"
 
     asn = Column(Integer, nullable=False)
     provider = Column(String, nullable=False)
 
 
-class CityTable(Base, IpGeoBase):
+class IPv4CityTable(Base, Ipv4GeoBase):
     __tablename__ = "city_v4"
+
+    city = Column(String, nullable=False)
+
+
+class IPv6CountryTable(Base, Ipv6GeoBase):
+    __tablename__ = "ipaddr_v6"
+
+    country = Column(String(2), nullable=False)
+
+
+class IPv6AsnTable(Base, Ipv6GeoBase):
+    __tablename__ = "asn_v6"
+
+    asn = Column(Integer, nullable=False)
+    provider = Column(String, nullable=False)
+
+
+class IPv6CityTable(Base, Ipv6GeoBase):
+    __tablename__ = "city_v6"
 
     city = Column(String, nullable=False)
 
@@ -108,6 +135,12 @@ def createMySQL():
     port = 3306
 
     return create_engine(f'mysql+mysqlconnector://{user}:{password}@{host}:{port}/{db_name}')
+
+
+CN = TypeVar('CN', IPv4CountryTable, IPv6CountryTable)
+ASN = TypeVar('ASN', IPv4AsnTable, IPv6AsnTable)
+CITY = TypeVar('CITY', IPv4CityTable, IPv6CityTable)
+IPADDRESS = TypeVar('IP', IPv4Address, IPv6Address)
 
 
 app = FastAPI()
@@ -151,14 +184,14 @@ def do_delete_multi(db: Session, records: list[Base]):
     db.commit()
 
 
-def do_update_country(country: CountryTable, values: dict):
+def do_update_country(country: Generic[CN], values: dict):
     country.addr = values["addr"]
     country.prefixlen = values["prefixlen"]
     country.cidr = values["cidr"]
     country.country = values["country"]
 
 
-def do_update_asn(asn: AsnTable, values: dict):
+def do_update_asn(asn: Generic[ASN], values: dict):
     asn.addr = values["addr"]
     asn.prefixlen = values["prefixlen"]
     asn.cidr = values["cidr"]
@@ -166,40 +199,76 @@ def do_update_asn(asn: AsnTable, values: dict):
     asn.provider = values["provider"]
 
 
-def do_update_city(city: CityTable, values: dict):
+def do_update_city(city: Generic[CITY], values: dict):
     city.addr = values["addr"]
     city.prefixlen = values["prefixlen"]
     city.cidr = values["cidr"]
     city.city = values["city"]
 
 
-def get_ip_records(db: Session, cidr: str):
-    country = db.query(CountryTable).filter(CountryTable.cidr == cidr).first()
-    asn = db.query(AsnTable).filter(AsnTable.cidr == cidr).first()
-    city = db.query(CityTable).filter(CityTable.cidr == cidr).first()
+def get_ip_records(db: Session, cidr: str, CN, ASN, CITY):
+    country = db.query(CN).filter(CN.cidr == cidr).first()
+    asn = db.query(ASN).filter(ASN.cidr == cidr).first()
+    city = db.query(CITY).filter(CITY.cidr == cidr).first()
     if not country or not asn or not city:
         raise HTTPException(status_code=404, detail="IP not found")
 
     return (country, asn, city)
 
 
-@app.get("/")
-def read_root():
-    return "Hello,World"
+def do_all_insert(values: dict, db: Session, CN, ASN, CITY):
+    do_insert_multi(
+        db,
+        [
+            CN(
+                addr=values["addr"],
+                prefixlen=values["prefixlen"],
+                cidr=values["cidr"],
+                country=values["country"],
+            ),
+            ASN(
+                addr=values["addr"],
+                prefixlen=values["prefixlen"],
+                cidr=values["cidr"],
+                asn=values["asn"],
+                provider=values["provider"],
+            ),
+            CITY(
+                addr=values["addr"],
+                prefixlen=values["prefixlen"],
+                cidr=values["cidr"],
+                city=values["city"],
+            ),
+        ],
+    )
+    return values
 
 
-@app.get("/search")
-def read_ipgeo(ipv4: IPvAnyAddress, db: Session = Depends(get_db)):
-    attr = cidr_ipattr.IpAttribute(4)
-    param = attr.bin_addr(ipaddress.ip_address(ipv4))
+def do_all_update(values: dict, cidr: str, db: Session, CN, ASN, CITY):
+    (country, asn, city) = get_ip_records(db, cidr, CN, ASN, CITY)
 
-    query = """
+    do_update_country(country, values)
+    do_update_asn(asn, values)
+    do_update_city(city, values)
+
+    db.commit()
+    return values
+
+
+def search_query(db: Session, ipaddress: IPADDRESS, version: int):
+    query = f"""
     select cidr, country, provider, asn, city
     from
-    (select cidr, country from ipaddr_v4 where addr like :param_like and addr like concat(substring(:param,1,prefixlen),'%')) as country,
-    (select provider, asn from asn_v4 where addr like :param_like and addr like concat(substring(:param,1,prefixlen),'%')) as asn,
-    (select city from city_v4 where addr like :param_like and addr like concat(substring(:param,1,prefixlen),'%')) as city
+    (select cidr, country from ipaddr_v{version}
+     where addr like :param_like and addr like concat(substring(:param,1,prefixlen),'%')) as country,
+    (select provider, asn from asn_v{version}
+     where addr like :param_like and addr like concat(substring(:param,1,prefixlen),'%')) as asn,
+    (select city from city_v{version}
+     where addr like :param_like and addr like concat(substring(:param,1,prefixlen),'%')) as city
     """
+    attr = cidr_ipattr.IpAttribute(version)
+    param = attr.bin_addr(ipaddress)
+
     ipgeo = (
         db.execute(
             text(query), {"param": param, "param_like": param[: attr.matches] + "%"}
@@ -212,71 +281,48 @@ def read_ipgeo(ipv4: IPvAnyAddress, db: Session = Depends(get_db)):
     return ipgeo
 
 
-@app.post("/ipv4/country", response_model=Country, dependencies=[Depends(check_api)])
-def create_country(country: Country, db: Session = Depends(get_db)):
-    values = country.make_dictionary()
-    do_insert(db, CountryTable(**values))
+@app.get("/")
+def read_root():
+    return "Hello,World"
+
+
+@app.get("/ipv4/search")
+def read_ipgeo(ipv4: IPv4Address, db: Session = Depends(get_db)):
+    return search_query(db, ip_address(ipv4), 4)
+
+
+@app.post("/ipv4/country", response_model=Country[IPv4Network], dependencies=[Depends(check_api)])
+def create_country(country: Country[IPv4Network], db: Session = Depends(get_db)):
+    values = country.make_dictionary(4)
+    do_insert(db, IPv4CountryTable(**values))
     return values
 
 
-@app.post("/ipv4/asn", response_model=Asn, dependencies=[Depends(check_api)])
-def create_asn(asn: Asn, db: Session = Depends(get_db)):
-    values = asn.make_dictionary()
-    do_insert(db, AsnTable(**values))
+@app.post("/ipv4/asn", response_model=Asn[IPv4Network], dependencies=[Depends(check_api)])
+def create_asn(asn: Asn[IPv4Network], db: Session = Depends(get_db)):
+    values = asn.make_dictionary(4)
+    do_insert(db, IPv4AsnTable(**values))
     return values
 
 
-@app.post("/ipv4/city", response_model=City, dependencies=[Depends(check_api)])
-def create_city(city: City, db: Session = Depends(get_db)):
-    values = city.make_dictionary()
-    do_insert(db, CityTable(**values))
+@app.post("/ipv4/city", response_model=City[IPv4Network], dependencies=[Depends(check_api)])
+def create_city(city: City[IPv4Network], db: Session = Depends(get_db)):
+    values = city.make_dictionary(4)
+    do_insert(db, IPv4CityTable(**values))
     return values
 
 
-@app.post("/ipv4", response_model=IpGeo, dependencies=[Depends(check_api)])
-def create_ipv4(ipgeo: IpGeo, db: Session = Depends(get_db)):
-    values = ipgeo.make_dictionary()
-    do_insert_multi(
-        db,
-        [
-            CountryTable(
-                addr=values["addr"],
-                prefixlen=values["prefixlen"],
-                cidr=values["cidr"],
-                country=values["country"],
-            ),
-            AsnTable(
-                addr=values["addr"],
-                prefixlen=values["prefixlen"],
-                cidr=values["cidr"],
-                asn=values["asn"],
-                provider=values["provider"],
-            ),
-            CityTable(
-                addr=values["addr"],
-                prefixlen=values["prefixlen"],
-                cidr=values["cidr"],
-                city=values["city"],
-            ),
-        ],
-    )
-    return values
+@app.post("/ipv4", response_model=IpGeo[IPv4Network], dependencies=[Depends(check_api)])
+def create_ipv4(ipgeo: IpGeo[IPv4Network], db: Session = Depends(get_db)):
+    return do_all_insert(ipgeo.make_dictionary(4), db, IPv4CountryTable, IPv4AsnTable, IPv4CityTable)
 
 
 @app.delete("/ipv4", status_code=200, dependencies=[Depends(check_api)])
-def delete_ipv4(cidr: IPvAnyNetwork, db: Session = Depends(get_db)):
-    do_delete_multi(db, list(get_ip_records(db, str(cidr))))
+def delete_ipv4(cidr: IPv4Network, db: Session = Depends(get_db)):
+    do_delete_multi(db, list(get_ip_records(db, str(cidr), IPv4CountryTable, IPv4AsnTable, IPv4CityTable)))
     return "OK"
 
 
-@app.put("/ipv4", response_model=IpGeo, dependencies=[Depends(check_api)])
-def update_ipv4(cidr: IPvAnyNetwork, ipgeo: IpGeo, db: Session = Depends(get_db)):
-    values = ipgeo.make_dictionary()
-    (country, asn, city) = get_ip_records(db, str(cidr))
-
-    do_update_country(country, values)
-    do_update_asn(asn, values)
-    do_update_city(city, values)
-
-    db.commit()
-    return values
+@app.put("/ipv4", response_model=IpGeo[IPv4Network], dependencies=[Depends(check_api)])
+def update_ipv4(cidr: IPv4Network, ipgeo: IpGeo[IPv4Network], db: Session = Depends(get_db)):
+    return do_all_update(ipgeo.make_dictionary(4), str(cidr), db, IPv4CountryTable, IPv4AsnTable, IPv4CityTable)
