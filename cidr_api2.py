@@ -14,7 +14,7 @@ from sqlalchemy.sql import text
 from sqlalchemy import Column, String, SmallInteger, Integer
 from sqlalchemy.exc import IntegrityError
 from typing import TypeVar, Generic
-from ipaddress import IPv4Address, IPv6Address, IPv4Network, ip_address, ip_network
+from ipaddress import IPv4Address, IPv6Address, IPv4Network, IPv6Network, ip_address, ip_network
 import cidr_ipattr
 
 
@@ -140,8 +140,8 @@ def createMySQL():
 CN = TypeVar('CN', IPv4CountryTable, IPv6CountryTable)
 ASN = TypeVar('ASN', IPv4AsnTable, IPv6AsnTable)
 CITY = TypeVar('CITY', IPv4CityTable, IPv6CityTable)
-IPADDRESS = TypeVar('IP', IPv4Address, IPv6Address)
-
+IPADDRESS = TypeVar('IPADDRESS', IPv4Address, IPv6Address)
+IPNETWORK = TypeVar('IPNETWORK', IPv4Network, IPv6Network)
 
 app = FastAPI()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=createMySQL())
@@ -326,3 +326,45 @@ def delete_ipv4(cidr: IPv4Network, db: Session = Depends(get_db)):
 @app.put("/ipv4", response_model=IpGeo[IPv4Network], dependencies=[Depends(check_api)])
 def update_ipv4(cidr: IPv4Network, ipgeo: IpGeo[IPv4Network], db: Session = Depends(get_db)):
     return do_all_update(ipgeo.make_dictionary(4), str(cidr), db, IPv4CountryTable, IPv4AsnTable, IPv4CityTable)
+
+
+@app.get("/ipv6/search")
+def read_ipgeo(ipv6: IPv6Address, db: Session = Depends(get_db)):
+    return search_query(db, ip_address(ipv6), 6)
+
+
+@app.post("/ipv6/country", response_model=Country[IPv6Network], dependencies=[Depends(check_api)])
+def create_country(country: Country[IPv6Network], db: Session = Depends(get_db)):
+    values = country.make_dictionary(6)
+    do_insert(db, IPv6CountryTable(**values))
+    return values
+
+
+@app.post("/ipv6/asn", response_model=Asn[IPv6Network], dependencies=[Depends(check_api)])
+def create_asn(asn: Asn[IPv6Network], db: Session = Depends(get_db)):
+    values = asn.make_dictionary(6)
+    do_insert(db, IPv6AsnTable(**values))
+    return values
+
+
+@app.post("/ipv6/city", response_model=City[IPv6Network], dependencies=[Depends(check_api)])
+def create_city(city: City[IPv6Network], db: Session = Depends(get_db)):
+    values = city.make_dictionary(6)
+    do_insert(db, IPv6CityTable(**values))
+    return values
+
+
+@app.post("/ipv6", response_model=IpGeo[IPv6Network], dependencies=[Depends(check_api)])
+def create_ipv6(ipgeo: IpGeo[IPv6Network], db: Session = Depends(get_db)):
+    return do_all_insert(ipgeo.make_dictionary(6), db, IPv6CountryTable, IPv6AsnTable, IPv6CityTable)
+
+
+@app.delete("/ipv6", status_code=200, dependencies=[Depends(check_api)])
+def delete_ipv6(cidr: IPv6Network, db: Session = Depends(get_db)):
+    do_delete_multi(db, list(get_ip_records(db, str(cidr), IPv6CountryTable, IPv6AsnTable, IPv6CityTable)))
+    return "OK"
+
+
+@app.put("/ipv6", response_model=IpGeo[IPv6Network], dependencies=[Depends(check_api)])
+def update_ipv6(cidr: IPv6Network, ipgeo: IpGeo[IPv6Network], db: Session = Depends(get_db)):
+    return do_all_update(ipgeo.make_dictionary(6), str(cidr), db, IPv6CountryTable, IPv6AsnTable, IPv6CityTable)
