@@ -21,7 +21,7 @@ sqlite3 database.cidr '.read city.sql'
 
 ## Test
 ```
-python3 tests/cidr_search_test.py
+python3 tests/test_cidr_search.py
 ```
 
 ## Run
@@ -67,4 +67,9 @@ python3 -m uvicorn cidr_api:app --reload
 ### search country,ASN,city
 ```
 curl -v http://localhost:8000/search?ipv4=23.218.95.131
+```
+
+### Test
+```
+pytest -v tests/test_cidr_api2.py
 ```

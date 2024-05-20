@@ -5,9 +5,9 @@
 # hidekuno@gmail.com
 #
 # Test howto
-# 1) python tests/cidr_search_test.py
-# 2) cd tests; python -m unittest cidr_search_test
-# 3) PYTHONPATH=$HOME/jvn python tests/cidr_search_test.py
+# 1) python tests/test_cidr_search.py
+# 2) cd tests; python -m unittest test_cidr_search
+# 3) PYTHONPATH=$HOME/jvn python tests/test_cidr_search.py
 #
 import unittest
 import traceback
