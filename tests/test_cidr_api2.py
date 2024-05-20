@@ -1,13 +1,17 @@
 #
 # Unit Test Code rest api
 #
-# pytest -v test_cidr_api2.py
+# pytest -v tests/test_cidr_api2.py
 #
 from fastapi.testclient import TestClient
-from cidr_api2 import app, get_db
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import copy
+from pathlib import Path
+import sys
+
+sys.path.append(str(Path(__file__).parent.parent))
+from cidr_api2 import app, get_db
 
 HEADERS = {
     "x-api-key": "apitest",
