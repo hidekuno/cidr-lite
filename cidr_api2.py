@@ -287,26 +287,26 @@ def read_root():
 
 
 @app.get("/ipv4/search")
-def read_ipgeo(ipv4: IPv4Address, db: Session = Depends(get_db)):
+def read_ipv4(ipv4: IPv4Address, db: Session = Depends(get_db)):
     return search_query(db, ip_address(ipv4), 4)
 
 
 @app.post("/ipv4/country", response_model=Country[IPv4Network], dependencies=[Depends(check_api)])
-def create_country(country: Country[IPv4Network], db: Session = Depends(get_db)):
+def create_country_ipv4(country: Country[IPv4Network], db: Session = Depends(get_db)):
     values = country.make_dictionary(4)
     do_insert(db, IPv4CountryTable(**values))
     return values
 
 
 @app.post("/ipv4/asn", response_model=Asn[IPv4Network], dependencies=[Depends(check_api)])
-def create_asn(asn: Asn[IPv4Network], db: Session = Depends(get_db)):
+def create_asn_ipv4(asn: Asn[IPv4Network], db: Session = Depends(get_db)):
     values = asn.make_dictionary(4)
     do_insert(db, IPv4AsnTable(**values))
     return values
 
 
 @app.post("/ipv4/city", response_model=City[IPv4Network], dependencies=[Depends(check_api)])
-def create_city(city: City[IPv4Network], db: Session = Depends(get_db)):
+def create_city_ipv4(city: City[IPv4Network], db: Session = Depends(get_db)):
     values = city.make_dictionary(4)
     do_insert(db, IPv4CityTable(**values))
     return values
@@ -329,26 +329,26 @@ def update_ipv4(cidr: IPv4Network, ipgeo: IpGeo[IPv4Network], db: Session = Depe
 
 
 @app.get("/ipv6/search")
-def read_ipgeo(ipv6: IPv6Address, db: Session = Depends(get_db)):
+def read_ipv6(ipv6: IPv6Address, db: Session = Depends(get_db)):
     return search_query(db, ip_address(ipv6), 6)
 
 
 @app.post("/ipv6/country", response_model=Country[IPv6Network], dependencies=[Depends(check_api)])
-def create_country(country: Country[IPv6Network], db: Session = Depends(get_db)):
+def create_country_ipv6(country: Country[IPv6Network], db: Session = Depends(get_db)):
     values = country.make_dictionary(6)
     do_insert(db, IPv6CountryTable(**values))
     return values
 
 
 @app.post("/ipv6/asn", response_model=Asn[IPv6Network], dependencies=[Depends(check_api)])
-def create_asn(asn: Asn[IPv6Network], db: Session = Depends(get_db)):
+def create_asn_ipv6(asn: Asn[IPv6Network], db: Session = Depends(get_db)):
     values = asn.make_dictionary(6)
     do_insert(db, IPv6AsnTable(**values))
     return values
 
 
 @app.post("/ipv6/city", response_model=City[IPv6Network], dependencies=[Depends(check_api)])
-def create_city(city: City[IPv6Network], db: Session = Depends(get_db)):
+def create_city_ipv6(city: City[IPv6Network], db: Session = Depends(get_db)):
     values = city.make_dictionary(6)
     do_insert(db, IPv6CityTable(**values))
     return values
