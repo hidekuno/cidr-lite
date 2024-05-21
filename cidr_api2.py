@@ -143,7 +143,20 @@ CITY = TypeVar('CITY', IPv4CityTable, IPv6CityTable)
 IPADDRESS = TypeVar('IPADDRESS', IPv4Address, IPv6Address)
 IPNETWORK = TypeVar('IPNETWORK', IPv4Network, IPv6Network)
 
-app = FastAPI()
+
+description = """
+GeoIP REST API is demo program.
+
+## Ipv4
+
+You can process CRUD for IPV4 regional, ASN, and country.
+
+## Ipv6
+
+You can process CRUD for IPV6 regional, ASN, and country.
+
+"""
+app = FastAPI(title="GeoIP REST API",description=description,)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=createMySQL())
 
 
@@ -283,16 +296,29 @@ def search_query(db: Session, ipaddress: IPADDRESS, version: int):
 
 @app.get("/")
 def read_root():
+    """
+    Root endpoint. Returns a simple greeting message.
+    """
     return "Hello,World"
 
 
 @app.get("/ipv4/search")
 def read_ipv4(ipv4: IPv4Address, db: Session = Depends(get_db)):
+    """
+    Searches IPv4 address information.
+
+    - **ipv4**: The IPv4 address.
+    """
     return search_query(db, ip_address(ipv4), 4)
 
 
 @app.post("/ipv4/country", response_model=Country[IPv4Network], dependencies=[Depends(check_api)])
 def create_country_ipv4(country: Country[IPv4Network], db: Session = Depends(get_db)):
+    """
+    Creates a new IPv4 country record.
+
+    - **country**: The country data including CIDR.
+    """
     values = country.make_dictionary(4)
     do_insert(db, IPv4CountryTable(**values))
     return values
@@ -300,6 +326,11 @@ def create_country_ipv4(country: Country[IPv4Network], db: Session = Depends(get
 
 @app.post("/ipv4/asn", response_model=Asn[IPv4Network], dependencies=[Depends(check_api)])
 def create_asn_ipv4(asn: Asn[IPv4Network], db: Session = Depends(get_db)):
+    """
+    Creates a new IPv4 ASN record.
+
+    - **asn**: The ASN data including CIDR.
+    """
     values = asn.make_dictionary(4)
     do_insert(db, IPv4AsnTable(**values))
     return values
@@ -307,6 +338,11 @@ def create_asn_ipv4(asn: Asn[IPv4Network], db: Session = Depends(get_db)):
 
 @app.post("/ipv4/city", response_model=City[IPv4Network], dependencies=[Depends(check_api)])
 def create_city_ipv4(city: City[IPv4Network], db: Session = Depends(get_db)):
+    """
+    Creates a new IPv4 city record.
+
+    - **city**: The city data including CIDR.
+    """
     values = city.make_dictionary(4)
     do_insert(db, IPv4CityTable(**values))
     return values
@@ -314,27 +350,53 @@ def create_city_ipv4(city: City[IPv4Network], db: Session = Depends(get_db)):
 
 @app.post("/ipv4", response_model=IpGeo[IPv4Network], dependencies=[Depends(check_api)])
 def create_ipv4(ipgeo: IpGeo[IPv4Network], db: Session = Depends(get_db)):
+    """
+    Creates a new IPv4 record with country, ASN, and city information.
+
+    - **ipgeo**: The IP geolocation data including CIDR.
+    """
     return do_all_insert(ipgeo.make_dictionary(4), db, IPv4CountryTable, IPv4AsnTable, IPv4CityTable)
 
 
 @app.delete("/ipv4", status_code=200, dependencies=[Depends(check_api)])
 def delete_ipv4(cidr: IPv4Network, db: Session = Depends(get_db)):
+    """
+    Deletes an existing IPv4 record.
+
+    - **cidr**: The CIDR of the record to delete.
+    """
     do_delete_multi(db, list(get_ip_records(db, str(cidr), IPv4CountryTable, IPv4AsnTable, IPv4CityTable)))
     return "OK"
 
 
 @app.put("/ipv4", response_model=IpGeo[IPv4Network], dependencies=[Depends(check_api)])
 def update_ipv4(cidr: IPv4Network, ipgeo: IpGeo[IPv4Network], db: Session = Depends(get_db)):
+    """
+    Updates an existing IPv4 record.
+
+    - **cidr**: The CIDR of the record to update.
+    - **ipgeo**: The new IP geolocation data.
+    """
     return do_all_update(ipgeo.make_dictionary(4), str(cidr), db, IPv4CountryTable, IPv4AsnTable, IPv4CityTable)
 
 
 @app.get("/ipv6/search")
 def read_ipv6(ipv6: IPv6Address, db: Session = Depends(get_db)):
+    """
+    Searches IPv6 address information.
+
+    - **ipv6**: The IPv6 address to search for.
+    """
     return search_query(db, ip_address(ipv6), 6)
 
 
 @app.post("/ipv6/country", response_model=Country[IPv6Network], dependencies=[Depends(check_api)])
 def create_country_ipv6(country: Country[IPv6Network], db: Session = Depends(get_db)):
+    """
+    Creates a new IPv6 country record.
+
+    - **country**: The country data including CIDR.
+    """
     values = country.make_dictionary(6)
     do_insert(db, IPv6CountryTable(**values))
     return values
@@ -342,6 +404,11 @@ def create_country_ipv6(country: Country[IPv6Network], db: Session = Depends(get
 
 @app.post("/ipv6/asn", response_model=Asn[IPv6Network], dependencies=[Depends(check_api)])
 def create_asn_ipv6(asn: Asn[IPv6Network], db: Session = Depends(get_db)):
+    """
+    Creates a new IPv6 ASN record.
+
+    - **asn**: The ASN data including CIDR.
+    """
     values = asn.make_dictionary(6)
     do_insert(db, IPv6AsnTable(**values))
     return values
@@ -349,6 +416,11 @@ def create_asn_ipv6(asn: Asn[IPv6Network], db: Session = Depends(get_db)):
 
 @app.post("/ipv6/city", response_model=City[IPv6Network], dependencies=[Depends(check_api)])
 def create_city_ipv6(city: City[IPv6Network], db: Session = Depends(get_db)):
+    """
+    Creates a new IPv6 city record.
+
+    - **city**: The city data including CIDR.
+    """
     values = city.make_dictionary(6)
     do_insert(db, IPv6CityTable(**values))
     return values
@@ -356,15 +428,31 @@ def create_city_ipv6(city: City[IPv6Network], db: Session = Depends(get_db)):
 
 @app.post("/ipv6", response_model=IpGeo[IPv6Network], dependencies=[Depends(check_api)])
 def create_ipv6(ipgeo: IpGeo[IPv6Network], db: Session = Depends(get_db)):
+    """
+    Creates a new IPv6 record with country, ASN, and city information.
+
+    - **ipgeo**: The IP geolocation data including CIDR.
+    """
     return do_all_insert(ipgeo.make_dictionary(6), db, IPv6CountryTable, IPv6AsnTable, IPv6CityTable)
 
 
 @app.delete("/ipv6", status_code=200, dependencies=[Depends(check_api)])
 def delete_ipv6(cidr: IPv6Network, db: Session = Depends(get_db)):
+    """
+    Deletes an existing IPv6 record.
+
+    - **cidr**: The CIDR of the record to delete.
+    """
     do_delete_multi(db, list(get_ip_records(db, str(cidr), IPv6CountryTable, IPv6AsnTable, IPv6CityTable)))
     return "OK"
 
 
 @app.put("/ipv6", response_model=IpGeo[IPv6Network], dependencies=[Depends(check_api)])
 def update_ipv6(cidr: IPv6Network, ipgeo: IpGeo[IPv6Network], db: Session = Depends(get_db)):
+    """
+    Updates an existing IPv6 record.
+
+    - **cidr**: The CIDR of the record to update.
+    - **ipgeo**: The new IP geolocation data.
+    """
     return do_all_update(ipgeo.make_dictionary(6), str(cidr), db, IPv6CountryTable, IPv6AsnTable, IPv6CityTable)
