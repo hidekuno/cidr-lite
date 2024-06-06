@@ -69,6 +69,18 @@ python3 -m uvicorn cidr_api:app --reload
 curl -v http://localhost:8000/search?ipv4=23.218.95.131
 ```
 
+## fastapi with MySQL
+### Requirement
+- docker installed
+- fastapi(0.111.0) installed.
+- SQLAlchemy installed.
+- mysql-connector-python installed.
+
+### Build
+```
+docker-compose up -d
+```
+
 ### Test
 ```
 pytest -v tests/test_cidr_api2.py
