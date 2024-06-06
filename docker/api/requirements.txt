@@ -1,0 +1,5 @@
+###### Requirements without Version Specifiers ######
+
+###### Requirements with Version Specifiers ######
+mysql-connector-python==8.3.0
+sqlalchemy==1.4.51

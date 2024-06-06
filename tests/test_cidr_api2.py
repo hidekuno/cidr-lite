@@ -17,6 +17,12 @@ HEADERS = {
     "x-api-key": "apitest",
     "Content-Type": "application/json",
 }
+def format_missing_test(rec):
+    ### test for fastapi 0.90
+    if 'url' in rec["detail"][0]:
+        del rec["detail"][0]['url']
+
+    return rec
 
 def make_assert_data(json_data, method, uri):
     def assert_body(typ, **kwargs):
@@ -243,7 +249,7 @@ def test_ipv4_error_post_all():
 def test_ipv4_error_put_all():
     response = client.put("/ipv4?cidr=192.168.3.0/24", headers=HEADERS)
     assert response.status_code == 422
-    assert response.json() == {
+    assert format_missing_test(response.json()) == {
         "detail": [
             {
                 "input": None,
@@ -252,7 +258,6 @@ def test_ipv4_error_put_all():
                 ],
                 "msg": "Field required",
                 "type": "missing",
-                "url": "https://errors.pydantic.dev/2.5/v/missing",
             },
         ],
     }
@@ -292,14 +297,13 @@ def test_ipv4_error_search():
     }
     response = client.get("/ipv4/search")
     assert response.status_code == 422
-    assert response.json() == {
+    assert format_missing_test(response.json()) == {
         "detail": [
             {
                 "type": "missing",
                 "loc": ["query", "ipv4"],
                 "msg": "Field required",
                 "input": None,
-                "url": "https://errors.pydantic.dev/2.5/v/missing",
             }
         ]
     }
@@ -328,14 +332,13 @@ def test_ipv4_error_delete():
     }
     response = client.delete("/ipv4", headers=headers)
     assert response.status_code == 422
-    assert response.json() == {
+    assert format_missing_test(response.json()) == {
         "detail": [
             {
                 "type": "missing",
                 "loc": ["query", "cidr"],
                 "msg": "Field required",
                 "input": None,
-                "url": "https://errors.pydantic.dev/2.5/v/missing",
             }
         ]
     }
@@ -526,7 +529,7 @@ def test_ipv6_error_post_all():
 def test_ipv6_error_put_all():
     response = client.put("/ipv6?cidr=fda6:eacc:b448:3::/64", headers=HEADERS)
     assert response.status_code == 422
-    assert response.json() == {
+    assert format_missing_test(response.json()) == {
         "detail": [
             {
                 "input": None,
@@ -535,7 +538,6 @@ def test_ipv6_error_put_all():
                 ],
                 "msg": "Field required",
                 "type": "missing",
-                "url": "https://errors.pydantic.dev/2.5/v/missing",
             },
         ],
     }
@@ -575,14 +577,13 @@ def test_ipv6_error_search():
     }
     response = client.get("/ipv6/search")
     assert response.status_code == 422
-    assert response.json() == {
+    assert format_missing_test(response.json()) == {
         "detail": [
             {
                 "type": "missing",
                 "loc": ["query", "ipv6"],
                 "msg": "Field required",
                 "input": None,
-                "url": "https://errors.pydantic.dev/2.5/v/missing",
             }
         ]
     }
@@ -611,14 +612,13 @@ def test_ipv6_error_delete():
     }
     response = client.delete("/ipv6", headers=headers)
     assert response.status_code == 422
-    assert response.json() == {
+    assert format_missing_test(response.json()) == {
         "detail": [
             {
                 "type": "missing",
                 "loc": ["query", "cidr"],
                 "msg": "Field required",
                 "input": None,
-                "url": "https://errors.pydantic.dev/2.5/v/missing",
             }
         ]
     }

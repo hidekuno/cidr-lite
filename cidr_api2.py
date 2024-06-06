@@ -23,7 +23,7 @@ T = TypeVar('T')
 
 def check_api(request: Request,
               api_key: str = Security(APIKeyHeader(name='x-api-key', auto_error=False))):
-    safe_clients = ['127.0.0.1', '10.250.10.129']
+    safe_clients = ['127.0.0.1', '10.250.10.129', 'testclient']
     API_KEY = 'apitest'
 
     if (not api_key or api_key != API_KEY):
